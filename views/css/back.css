@@ -1,0 +1,95 @@
+/**
+* 2007-2015 PrestaShop
+*
+* NOTICE OF LICENSE
+*
+* This source file is subject to the Academic Free License (AFL 3.0)
+* that is bundled with this package in the file LICENSE.txt.
+* It is also available through the world-wide-web at this URL:
+* http://opensource.org/licenses/afl-3.0.php
+* If you did not receive a copy of the license and are unable to
+* obtain it through the world-wide-web, please send an email
+* to license@prestashop.com so we can send you a copy immediately.
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+* versions in the future. If you wish to customize PrestaShop for your
+* needs please refer to http://www.prestashop.com for more information.
+*
+*  @author    Pagar.me
+*  @copyright 2015 Pagar.me
+*  @version   1.0.0
+*  @link      https://pagar.me/
+*  @license  
+*/
+
+/**
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
+
+#content .tab-pane:first-child .panel {
+	border-top-left-radius: 0;
+}
+
+.pagarme-header .text-branded,
+.pagarme-content .text-branded {
+	color: #00aff0;
+}
+
+.pagarme-header h4,
+.pagarme-content h4,
+.pagarme-content h5 {
+	margin: 2px 0;
+	color: #00aff0;
+	font-size: 1.8em;
+}
+
+.pagarme-header h4 {
+	margin-top: 5px;
+}
+
+.pagarme-header .col-md-6 {
+	margin-top: 18px;
+}
+
+.pagarme-content h4 {
+	margin-bottom: 10px;
+}
+
+.pagarme-content h5 {
+	font-size: 1.4em;
+	margin-bottom: 10px;
+}
+
+.pagarme-content h6 {
+	font-size: 1.3em;
+	margin: 1px 0 4px 0;
+}
+
+.pagarme-header > .col-md-4 {
+	height: 65px;
+	vertical-align: middle;
+	border-left: 1px solid #ddd;
+}
+
+.pagarme-header > .col-md-4:first-child {
+	border-left: none;
+}
+
+.pagarme-header #create-account-btn {
+	margin-top: 14px;
+}
+
+.pagarme-content dd + dt {
+	margin-top: 5px;
+}
+
+.pagarme-content ul {
+	padding-left: 15px;
+}
+
+.pagarme-content .ul-spaced li {
+	margin-bottom: 5px;
+}
