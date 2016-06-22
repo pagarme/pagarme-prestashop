@@ -70,13 +70,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		
 		if ((Tools::isSubmit('cart_id') == false) || (Tools::isSubmit('secure_key') == false))
 			return false;
-			
-		//if (($integrationMode == 'gateway') && (Tools::isSubmit('payment_way') == false))
-		//	return false;
-		
-		//if (($integrationMode == 'checkout_transparente') && (Tools::isSubmit('token') == false))
-		//	return false;
-			
+
 		if ((Tools::getValue('payment_way') == 'card') && (Tools::isSubmit('card_hash') == false))
 			return false;
 		
@@ -134,6 +128,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			 * Pagar.Me Transaction
 			 */
 			$order = new Order($order_id);
+
 			$api_key = Configuration::get('PAGARME_API_KEY');
 			Pagarme::setApiKey($api_key);
 			$transaction = null;
@@ -236,17 +231,41 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 					}
 				} else if($integrationMode == 'checkout_transparente' && !empty($token)) {
 
+
 					Pagarmeps::addLog('06-Confirm-CTransparent-start token='.$token, 1, 'info', 'Pagarme', $order_id);
-
-				//	Zend_Debug::dump($cart->getOrderTotal())
-
+					
 					$transaction = PagarMe_Transaction::findById($token);
 
-					//$transaction->capture($cart->getOrderTotal()*100);
-					$transaction->captureAdv($cart->getOrderTotal()*100, array(
-								'id_pedido' => $order_id,
-								'reference' => $order->reference
-							));
+					$installments = $transaction->getInstallments();
+					$cartTotal = str_replace('.', '', $cart->getOrderTotal());
+
+					$maxInstallments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
+					$freeInstallments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+					$interestRate = Configuration::get('PAGARME_INSTALLMENT_TAX');
+
+					$installmentsPagarme = PagarMe_Transaction::calculateInstallmentsAmount($cartTotal, $interestRate, $maxInstallments, $freeInstallments);
+
+					foreach ($installmentsPagarme['installments'] as $pagarmeInstallment) {
+						if ($pagarmeInstallment['installment'] == $installments) {
+
+							$amountCaptured = $pagarmeInstallment['amount'];
+						}
+					}
+
+					$orderAmount = $amountCaptured / 100;
+					$orderAmount = number_format($orderAmount, 4, '.', '');
+
+					$order->total_paid = $orderAmount;
+					$order->total_paid_tax_incl = $orderAmount;
+					$order->total_paid_real = $orderAmount;
+					$order->total_products_wt = $orderAmount;
+
+					$order->save();
+
+					$transaction->captureAdv($amountCaptured, array(
+						'id_pedido' => $order_id,
+						'reference' => $order->reference
+					));
 
 					$ct_payment_method = $transaction->payment_method;
 
