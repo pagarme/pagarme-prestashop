@@ -252,13 +252,13 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						}
 					}
 
-					$orderAmount = $amountCaptured / 100;
-					$orderAmount = number_format($orderAmount, 4, '.', '');
+					$itemAmount = $amountCaptured / 100;
+					$itemAmount = number_format($itemAmount, 4, '.', '');
 
-					$order->total_paid = $orderAmount;
-					$order->total_paid_tax_incl = $orderAmount;
-					$order->total_paid_real = $orderAmount;
-					$order->total_products_wt = $orderAmount;
+					$order->total_paid = $itemAmount;
+					$order->total_paid_tax_incl = $itemAmount;
+					$order->total_paid_real = $itemAmount;
+					$order->total_products_wt = $itemAmount;
 
 					$order->save();
 
