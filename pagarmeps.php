@@ -786,9 +786,9 @@ class Pagarmeps extends PaymentModule
 	 * Take care if the button should be displayed or not.
 	 */
 	public function hookPayment($params)
-	{			
-		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
-			return;
+	{
+//		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
+//			return;
 
 		$currency_id = $params['cart']->id_currency;
 		$currency = new Currency((int)$currency_id);
@@ -811,6 +811,7 @@ class Pagarmeps extends PaymentModule
 		if($integrationMode == 'checkout_transparente') {
 		
 			$cart = Context::getContext()->cart;
+
 			$total_order = $cart->getOrderTotal();
 			$customer = new Customer((int)$cart->id_customer);
 			$address = new Address((int)$cart->id_address_invoice);
@@ -852,7 +853,6 @@ class Pagarmeps extends PaymentModule
 				}
 			}
 			
-			
 			$this->context->smarty->assign(array(
 				'cart_id' => $cart->id,
 				'total_order' => $total_order,
@@ -872,12 +872,12 @@ class Pagarmeps extends PaymentModule
 				'address_zipcode' => $address->postcode,
 				'phone_ddd' => $ddd,
 				'phone_number' => $phone,
-				'customer_document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
+				'customer_document_number' => Pagarmeps::getCustomerCPFouCNPJ($address,(int)$cart->id_customer),
 				'max_installments' => $max_installments,
 				'interest_rate' => $interest_rate,
 				'free_installments' => $free_installments,
 			));
-		
+
 			$this->smarty->assign('pay_way', $payWay);
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-transparent.tpl');
 			
@@ -907,7 +907,7 @@ class Pagarmeps extends PaymentModule
 	 * This hook is used to display the order confirmation page.
 	 */
 	public function hookPaymentReturn($params)
-	{	
+	{
 		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
 			return;
 			
@@ -1101,7 +1101,16 @@ class Pagarmeps extends PaymentModule
 	* There si no standar in PS for CPF or CNPJ. Many addons are implementing it in their own way
 	* So this function have to be adapted for each kind of implementation, and will be used internaly to get CPF / CNPJ information
 	*/
-	public static function getCustomerCPFouCNPJ($id_customer) {
+	public static function getCustomerCPFouCNPJ($address, $id_customer)
+	{
+		if (isset($address->cpf_cnpj)) {
+			if (count($address->cpf_cnpj) === 11) {
+				return Djtalbrazilianregister::mascaraString('###.###.###-##', $address->cpf_cnpj);
+			}
+
+			return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $address->cpf_cnpj);
+		}
+
 		if(file_exists('../djtalbrazilianregister/djtalbrazilianregister.php')){
 			include_once('../djtalbrazilianregister/djtalbrazilianregister.php');
 		}

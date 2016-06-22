@@ -35,8 +35,9 @@ class PagarmepsBoletoModuleFrontController extends ModuleFrontController
 		/**
 		 * Oops, an error occured.
 		 */
-		if (Tools::getValue('action') == 'error')
+		if (Tools::getValue('action') == 'error'){
 			return $this->displayError('An error occurred while trying to redirect the customer');
+		}
 		else
 		{
 			$cart = Context::getContext()->cart;

@@ -41,22 +41,22 @@
 	{l s='Here is the barcode of the Boleto:' mod='pagarmeps'}
 	<br />
 	<strong>{$boleto_barcode|escape:'htmlall':'UTF-8'}</strong>
-	
+
 	<script>
 		var boleto_url = '{$boleto_url|escape:'htmlall':'UTF-8'}';
 		function printBoleto() {
 			var myWindow=window.open('','','width=800,height=800');
 			myWindow.document.write("<iframe src=\"{$boleto_url|escape:'htmlall':'UTF-8'}\" style=\"width: 100%; height: 900px; border: none;\" id=\"boletoIframe\" name=\"boletoIframe\" ></iframe>");
-			
+
 			myWindow.document.close();
 			myWindow.focus();
 			$(myWindow.document).ready(function(){
 				setTimeout(function(){ myWindow.print(); }, 3000);
-				
+
 			});
 		}
 	</script>
-	
+
 	<iframe src="{$boleto_url|escape:'htmlall':'UTF-8'}" id="boletoIframe" name="boletoIframe" ></iframe>
 </div>
 {/if}
