@@ -233,19 +233,21 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 
 					Pagarmeps::addLog('06-Confirm-CTransparent-start token='.$token, 1, 'info', 'Pagarme', $order_id);
-					
 					$transaction = PagarMe_Transaction::findById($token);
 
 					$installments = $transaction->getInstallments();
-					$cartTotal = str_replace('.', '', $cart->getOrderTotal());
+					$cartTotal = str_replace('.', '', number_format($cart->getOrderTotal(),2));
 
 					$maxInstallments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
 					$freeInstallments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
 					$interestRate = Configuration::get('PAGARME_INSTALLMENT_TAX');
 
-					$installmentsPagarme = PagarMe_Transaction::calculateInstallmentsAmount($cartTotal, $interestRate, $maxInstallments, $freeInstallments);
+					$installmentsPagarme = PagarMe_Transaction::calculateInstallmentsAmount(intval($cartTotal), $interestRate, $maxInstallments, $freeInstallments);
+
+					var_dump($installmentsPagarme);
 
 					foreach ($installmentsPagarme['installments'] as $pagarmeInstallment) {
+
 						if ($pagarmeInstallment['installment'] == $installments) {
 
 							$amountCaptured = $pagarmeInstallment['amount'];
@@ -253,7 +255,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 					}
 
 					$itemAmount = $amountCaptured / 100;
-					$itemAmount = number_format($itemAmount, 4, '.', '');
+					$itemAmount = number_format($itemAmount, 4);
 
 					$order->total_paid = $itemAmount;
 					$order->total_paid_tax_incl = $itemAmount;
