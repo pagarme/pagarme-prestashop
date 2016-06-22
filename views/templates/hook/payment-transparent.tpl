@@ -36,7 +36,7 @@
 				{assign var='paymentText' value='Pagar com Cartão' }
 			{/if}
 	
-			<form class="payment_module {$pay_way|escape:'htmlall':'UTF-8'}" id="pagarme_payment_transparent_auto" method="POST" action="{$link->getModuleLink('pagarmeps', 'confirmation', ['cart_id' => $cart_id, 'secure_key22' => $secure_key], true)|escape:'htmlall':'UTF-8'}">
+			<form class="payment_module {$pay_way|escape:'htmlall':'UTF-8'}" id="pagarme_payment_transparent_auto" method="POST" action="{$link->getModuleLink('pagarmeps', 'confirmation', ['cart_id' => $cart_id, 'secure_key' => $secure_key], true)|escape:'htmlall':'UTF-8'}">
 				<span class="waiting-view" >{l s='Pay with ...' mod='pagarmeps' }</span>
 				<script type="text/javascript"
 					src="https://assets.pagar.me/checkout/checkout.js"
