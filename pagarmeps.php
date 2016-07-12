@@ -809,17 +809,17 @@ class Pagarmeps extends PaymentModule
 		
 		$return = '';
 		if($integrationMode == 'checkout_transparente') {
-		
+
 			$cart = Context::getContext()->cart;
 
 			$total_order = $cart->getOrderTotal();
 			$customer = new Customer((int)$cart->id_customer);
 			$address = new Address((int)$cart->id_address_invoice);
 			$state = new State((int)$address->id_state);
-			
+
 			$phone = !empty($address->phone_mobile)?$address->phone_mobile:$address->phone;
 			$ddd = '';
-			
+
 			if(!empty($phone) && Tools::strlen($phone) > 2) {
 				if(strrpos($phone, '(') !== false && strrpos($phone, ')') !== false && strrpos($phone, '(') < strrpos($phone, ')')){
 					preg_match('#\((.*?)\)#', $phone, $match);
@@ -830,18 +830,18 @@ class Pagarmeps extends PaymentModule
 					$phone = Tools::substr($phone, 2, Tools::strlen($phone));
 				}
 			}
-			
+
 			$max_installments = 1;
 			if((bool)Configuration::get('PAGARME_INSTALLMENT') == true) {
 				$max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
 			}
-			
+
 			$interest_rate = '';
 			$conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX');
 			if( !empty($conf_val)) {
 				$interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
 			}
-			
+
 			$free_installments = '';
 			$conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
 			if(!empty($conf_val)){
@@ -852,12 +852,11 @@ class Pagarmeps extends PaymentModule
 					$free_installments = 1;
 				}
 			}
-			
+
 			$this->context->smarty->assign(array(
 				'cart_id' => $cart->id,
 				'total_order' => $total_order,
 				'encryption_key' => $encryption_key,
-				//'api_key' => $api_key,
 				'pay_way' => $payWay,
 				'integration_mode' => $integrationMode,
 				'secure_key' => Context::getContext()->customer->secure_key,
@@ -877,7 +876,6 @@ class Pagarmeps extends PaymentModule
 				'interest_rate' => $interest_rate,
 				'free_installments' => $free_installments,
 			));
-
 			$this->smarty->assign('pay_way', $payWay);
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-transparent.tpl');
 			
@@ -1103,32 +1101,37 @@ class Pagarmeps extends PaymentModule
 	*/
 	public static function getCustomerCPFouCNPJ($address, $id_customer)
 	{
-		if (isset($address->cpf_cnpj)) {
-			if (count($address->cpf_cnpj) === 11) {
-				return Djtalbrazilianregister::mascaraString('###.###.###-##', $address->cpf_cnpj);
+		try {
+			if (isset($address->cpf_cnpj)) {
+				if (count($address->cpf_cnpj) === 11) {
+					return Djtalbrazilianregister::mascaraString('###.###.###-##', $address->cpf_cnpj);
+				}
+
+				return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $address->cpf_cnpj);
 			}
 
-			return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $address->cpf_cnpj);
-		}
+			if(file_exists('../djtalbrazilianregister/djtalbrazilianregister.php')){
+				include_once('../djtalbrazilianregister/djtalbrazilianregister.php');
+			}
 
-		if(file_exists('../djtalbrazilianregister/djtalbrazilianregister.php')){
-			include_once('../djtalbrazilianregister/djtalbrazilianregister.php');
-		}
-		
-	
-		if(method_exists('BrazilianRegister','getByCustomerId') && method_exists('Djtalbrazilianregister','mascaraString')){
-			$breg = BrazilianRegister::getByCustomerId($id_customer);
-			$br_document_cpf = $breg['cpf'];
-            $br_document_cnpj = $breg['cnpj'];
-            if(!empty($br_document_cpf)) {
-				return Djtalbrazilianregister::mascaraString('###.###.###-##', $br_document_cpf);
-			} else if(!empty($br_document_cnpj)) {
-				return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $br_document_cnpj);
+
+			if(method_exists('BrazilianRegister','getByCustomerId') && method_exists('Djtalbrazilianregister','mascaraString')){
+				$breg = BrazilianRegister::getByCustomerId($id_customer);
+				$br_document_cpf = $breg['cpf'];
+				$br_document_cnpj = $breg['cnpj'];
+				if(!empty($br_document_cpf)) {
+					return Djtalbrazilianregister::mascaraString('###.###.###-##', $br_document_cpf);
+				} else if(!empty($br_document_cnpj)) {
+					return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $br_document_cnpj);
+				} else {
+					return '';
+				}
 			} else {
 				return '';
 			}
-        } else {
-            return '';
-        }
+		} catch (Exception $e) {
+			return null;
+		}
+
 	}
 }
