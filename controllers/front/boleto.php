@@ -35,9 +35,8 @@ class PagarmepsBoletoModuleFrontController extends ModuleFrontController
 		/**
 		 * Oops, an error occured.
 		 */
-		if (Tools::getValue('action') == 'error'){
+		if (Tools::getValue('action') == 'error')
 			return $this->displayError('An error occurred while trying to redirect the customer');
-		}
 		else
 		{
 			$cart = Context::getContext()->cart;
@@ -45,6 +44,7 @@ class PagarmepsBoletoModuleFrontController extends ModuleFrontController
 			$pay_way = Configuration::get('PAGARME_PAY_WAY');
 			$integration_mode = Configuration::get('PAGARME_INTEGRATION_MODE');
 			$encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
+			$boletoDiscount = Configuration::get('PAGARME_BOLETO_DISCOUNT');
 			
 			if(empty($encryption_key)){
 				return $this->displayError('An error occurred, missing configuration for the Pagar.me Module');
@@ -59,6 +59,7 @@ class PagarmepsBoletoModuleFrontController extends ModuleFrontController
 				'encryption_key' => $encryption_key,
 				'pay_way' => $pay_way,
 				'integration_mode' => $integration_mode,
+				'boleto_discount_percentage' => '20',
 				'secure_key' => Context::getContext()->customer->secure_key,
 			));
 
@@ -88,10 +89,6 @@ class PagarmepsBoletoModuleFrontController extends ModuleFrontController
 	*/
 	public function setMedia(){
 		parent::setMedia();
-		//$this->context->controller->addJS(array('https://assets.pagar.me/js/pagarme.min.js',
-		//$this->module->getPath().'/views/js/jquery.mask.min.js',
-		//$this->module->getPath().'/views/js/gateway.js',
-		//));
 	}
 
 }

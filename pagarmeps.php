@@ -161,17 +161,13 @@ class Pagarmeps extends PaymentModule
 		Configuration::deleteByName('PAGARME_ENCRYPTION_KEY');
 		Configuration::deleteByName('PAGARME_PAY_WAY');
 		Configuration::deleteByName('PAGARME_ONE_CLICK_BUY');
+		Configuration::deleteByName('PAGARME_BOLETO_DISCOUNT');
 		
 		return parent::uninstall();
 	}
 	
 	public function createStates()
 	{
-		//$languages = Language::getLanguages();
-		/*
-		processing, authorized, paid, refunded, waiting_payment, pending_refund, refused
-		
-		*/
 
 		//PROCESSING
 		$order_state = new OrderState();
@@ -608,6 +604,13 @@ class Pagarmeps extends PaymentModule
 					),
 					array(
 						'type' => 'text',
+						'prefix' => '%',
+						'label' => $this->l('Boleto Discount'),
+						'name' => 'PAGARME_BOLETO_DISCOUNT',
+						'desc' => $this->l('Boleto Discount'),
+					),
+					array(
+						'type' => 'text',
 						'label' => $this->l('Installment Tax rate'),
 						'name' => 'PAGARME_INSTALLMENT_TAX',
 						'prefix' => '%',
@@ -746,6 +749,7 @@ class Pagarmeps extends PaymentModule
 			'PAGARME_INSTALLMENT_TAX_FREE' => Configuration::get('PAGARME_INSTALLMENT_TAX_FREE'),
 			'PAGARME_INSTALLMENT_TAX' => Configuration::get('PAGARME_INSTALLMENT_TAX'),
 			'PAGARME_ACTIVATE_LOG' => Configuration::get('PAGARME_ACTIVATE_LOG'),
+			'PAGARME_BOLETO_DISCOUNT' => Configuration::get('PAGARME_BOLETO_DISCOUNT'),
 		);
 	}
 
@@ -786,9 +790,9 @@ class Pagarmeps extends PaymentModule
 	 * Take care if the button should be displayed or not.
 	 */
 	public function hookPayment($params)
-	{
-//		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
-//			return;
+	{			
+		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
+			return;
 
 		$currency_id = $params['cart']->id_currency;
 		$currency = new Currency((int)$currency_id);
@@ -809,17 +813,16 @@ class Pagarmeps extends PaymentModule
 		
 		$return = '';
 		if($integrationMode == 'checkout_transparente') {
-
+		
 			$cart = Context::getContext()->cart;
-
 			$total_order = $cart->getOrderTotal();
 			$customer = new Customer((int)$cart->id_customer);
 			$address = new Address((int)$cart->id_address_invoice);
 			$state = new State((int)$address->id_state);
-
+			
 			$phone = !empty($address->phone_mobile)?$address->phone_mobile:$address->phone;
 			$ddd = '';
-
+			
 			if(!empty($phone) && Tools::strlen($phone) > 2) {
 				if(strrpos($phone, '(') !== false && strrpos($phone, ')') !== false && strrpos($phone, '(') < strrpos($phone, ')')){
 					preg_match('#\((.*?)\)#', $phone, $match);
@@ -830,18 +833,18 @@ class Pagarmeps extends PaymentModule
 					$phone = Tools::substr($phone, 2, Tools::strlen($phone));
 				}
 			}
-
+			
 			$max_installments = 1;
 			if((bool)Configuration::get('PAGARME_INSTALLMENT') == true) {
 				$max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
 			}
-
+			
 			$interest_rate = '';
 			$conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX');
 			if( !empty($conf_val)) {
 				$interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
 			}
-
+			
 			$free_installments = '';
 			$conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
 			if(!empty($conf_val)){
@@ -853,10 +856,13 @@ class Pagarmeps extends PaymentModule
 				}
 			}
 
+			$boletoDiscount = Configuration::get('PAGARME_BOLETO_DISCOUNT');
+			
 			$this->context->smarty->assign(array(
 				'cart_id' => $cart->id,
 				'total_order' => $total_order,
 				'encryption_key' => $encryption_key,
+				//'api_key' => $api_key,
 				'pay_way' => $payWay,
 				'integration_mode' => $integrationMode,
 				'secure_key' => Context::getContext()->customer->secure_key,
@@ -871,11 +877,13 @@ class Pagarmeps extends PaymentModule
 				'address_zipcode' => $address->postcode,
 				'phone_ddd' => $ddd,
 				'phone_number' => $phone,
-				'customer_document_number' => Pagarmeps::getCustomerCPFouCNPJ($address,(int)$cart->id_customer),
+				'customer_document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
 				'max_installments' => $max_installments,
-				'interest_rate' => $interest_rate,
+				'interest_rate' => ($interest_rate) ? $interest_rate : 0,
 				'free_installments' => $free_installments,
+				'boleto_discount_percentage' => $boletoDiscount
 			));
+		
 			$this->smarty->assign('pay_way', $payWay);
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-transparent.tpl');
 			
@@ -905,7 +913,7 @@ class Pagarmeps extends PaymentModule
 	 * This hook is used to display the order confirmation page.
 	 */
 	public function hookPaymentReturn($params)
-	{
+	{	
 		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
 			return;
 			
@@ -1099,39 +1107,25 @@ class Pagarmeps extends PaymentModule
 	* There si no standar in PS for CPF or CNPJ. Many addons are implementing it in their own way
 	* So this function have to be adapted for each kind of implementation, and will be used internaly to get CPF / CNPJ information
 	*/
-	public static function getCustomerCPFouCNPJ($address, $id_customer)
-	{
-		try {
-			if (isset($address->cpf_cnpj)) {
-				if (count($address->cpf_cnpj) === 11) {
-					return Djtalbrazilianregister::mascaraString('###.###.###-##', $address->cpf_cnpj);
-				}
-
-				return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $address->cpf_cnpj);
-			}
-
-			if(file_exists('../djtalbrazilianregister/djtalbrazilianregister.php')){
-				include_once('../djtalbrazilianregister/djtalbrazilianregister.php');
-			}
-
-
-			if(method_exists('BrazilianRegister','getByCustomerId') && method_exists('Djtalbrazilianregister','mascaraString')){
-				$breg = BrazilianRegister::getByCustomerId($id_customer);
-				$br_document_cpf = $breg['cpf'];
-				$br_document_cnpj = $breg['cnpj'];
-				if(!empty($br_document_cpf)) {
-					return Djtalbrazilianregister::mascaraString('###.###.###-##', $br_document_cpf);
-				} else if(!empty($br_document_cnpj)) {
-					return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $br_document_cnpj);
-				} else {
-					return '';
-				}
+	public static function getCustomerCPFouCNPJ($id_customer) {
+		if(file_exists('../djtalbrazilianregister/djtalbrazilianregister.php')){
+			include_once('../djtalbrazilianregister/djtalbrazilianregister.php');
+		}
+		
+	
+		if(method_exists('BrazilianRegister','getByCustomerId') && method_exists('Djtalbrazilianregister','mascaraString')){
+			$breg = BrazilianRegister::getByCustomerId($id_customer);
+			$br_document_cpf = $breg['cpf'];
+            $br_document_cnpj = $breg['cnpj'];
+            if(!empty($br_document_cpf)) {
+				return Djtalbrazilianregister::mascaraString('###.###.###-##', $br_document_cpf);
+			} else if(!empty($br_document_cnpj)) {
+				return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $br_document_cnpj);
 			} else {
 				return '';
 			}
-		} catch (Exception $e) {
-			return null;
-		}
-
+        } else {
+            return '';
+        }
 	}
 }

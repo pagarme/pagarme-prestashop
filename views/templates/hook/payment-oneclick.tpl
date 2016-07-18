@@ -37,7 +37,7 @@ $(document).on('ready', function(){
 			width: 400,
 			height: 400,
 			autoSize: true,
-			href: "{$base_dir}/index.php?fc=module&module=pagarmeps&controller=oneclickbuy",
+			href: "{$link->getModuleLink('pagarmeps', 'oneclickbuy', array(), true)|escape:'htmlall':'UTF-8'}",
 			type: 'ajax'
 		});
 	});

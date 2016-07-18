@@ -44,6 +44,7 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 			$pay_way = Configuration::get('PAGARME_PAY_WAY');
 			$integration_mode = Configuration::get('PAGARME_INTEGRATION_MODE');
 			$encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
+			$boletoDiscount = Configuration::get('PAGARME_BOLETO_DISCOUNT');
 			
 			if(empty($encryption_key)){
 				return $this->displayError('An error occurred, missing configuration for the Pagar.me Module');
@@ -82,6 +83,7 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 				'phone_ddd' => $ddd,
 				'phone_number' => $phone,
 				'customer_document_number' => $customer->siret,
+				'boleto_discount_percentage' => $boletoDiscount
 				
 			));
 
