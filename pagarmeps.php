@@ -1102,12 +1102,14 @@ class Pagarmeps extends PaymentModule
 	public static function getCustomerCPFouCNPJ($address, $id_customer)
 	{
 		try {
+
 			if (isset($address->cpf_cnpj)) {
-				if (count($address->cpf_cnpj) === 11) {
-					return Djtalbrazilianregister::mascaraString('###.###.###-##', $address->cpf_cnpj);
+
+				if (count(str_replace(array('-','.'), '', $address->cpf_cnpj)) === 11) {
+					return  $address->cpf_cnpj;
 				}
 
-				return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $address->cpf_cnpj);
+				return $address->cpf_cnpj;
 			}
 
 			if(file_exists('../djtalbrazilianregister/djtalbrazilianregister.php')){
@@ -1116,16 +1118,15 @@ class Pagarmeps extends PaymentModule
 
 
 			if(method_exists('BrazilianRegister','getByCustomerId') && method_exists('Djtalbrazilianregister','mascaraString')){
-				$breg = BrazilianRegister::getByCustomerId($id_customer);
-				$br_document_cpf = $breg['cpf'];
-				$br_document_cnpj = $breg['cnpj'];
-				if(!empty($br_document_cpf)) {
-					return Djtalbrazilianregister::mascaraString('###.###.###-##', $br_document_cpf);
-				} else if(!empty($br_document_cnpj)) {
-					return Djtalbrazilianregister::mascaraString('##.###.###/####-##', $br_document_cnpj);
-				} else {
-					return '';
+
+				$documentNumber = BrazilianRegister::getByCustomerId($id_customer);
+
+				if ($documentNumber['cpf']) {
+					return $documentNumber['cpf'];
 				}
+
+				return $documentNumber['cnpj'];
+
 			} else {
 				return '';
 			}
@@ -1133,5 +1134,24 @@ class Pagarmeps extends PaymentModule
 			return null;
 		}
 
+	}
+
+	public static function mask($val, $mask) {
+		$maskared = '';
+		$k = 0;
+		for($i = 0; $i<=strlen($mask)-1; $i++)
+		{
+			if($mask[$i] == '#')
+			{
+				if(isset($val[$k]))
+					$maskared .= $val[$k++];
+			}
+			else
+			{
+				if(isset($mask[$i]))
+					$maskared .= $mask[$i];
+			}
+		}
+		return $maskared;
 	}
 }

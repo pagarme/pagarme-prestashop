@@ -82,7 +82,7 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 				'phone_ddd' => $ddd,
 				'phone_number' => $phone,
 				'customer_document_number' => $customer->siret,
-				
+
 			));
 
 			return $this->setTemplate('redirect-transparent.tpl');
