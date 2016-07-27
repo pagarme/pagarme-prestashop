@@ -1,29 +1,29 @@
 <?php
 /**
-* 2007-2015 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author    Pagar.me
-*  @copyright 2015 Pagar.me
-*  @version   1.0.0
-*  @link      https://pagar.me/
-*  @license  
-*/
+ * 2007-2015 PrestaShop
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License (AFL 3.0)
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/afl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@prestashop.com so we can send you a copy immediately.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+ * versions in the future. If you wish to customize PrestaShop for your
+ * needs please refer to http://www.prestashop.com for more information.
+ *
+ *  @author    Pagar.me
+ *  @copyright 2015 Pagar.me
+ *  @version   1.0.0
+ *  @link      https://pagar.me/
+ *  @license
+ */
 
 if (!defined('_PS_VERSION_'))
 	exit;
@@ -31,7 +31,7 @@ if (!defined('_PS_VERSION_'))
 class Pagarmeps extends PaymentModule
 {
 	protected $config_form = false;
-	
+
 	private function loader($className) {
 		//echo 'Trying to load ', $className, ' via ', __METHOD__, "()\n";
 		if(strrpos($className, 'PagarMe_') !== false) {
@@ -41,7 +41,7 @@ class Pagarmeps extends PaymentModule
 		}else if(strrpos($className, 'Pagarmeps') !== false) {
 			include dirname(__FILE__).'/classes/'.$className . '.php';
 		} else if ($className == 'Pagarme' || $className == 'RestClient') {
-		  	include dirname(__FILE__).'/lib/pagarme/'.$className . '.php';
+			include dirname(__FILE__).'/lib/pagarme/'.$className . '.php';
 		}
 	}
 
@@ -65,7 +65,7 @@ class Pagarmeps extends PaymentModule
 		$this->description = $this->l('O Pagar.me aprova 92 a cada 100 tentativas de pagamento para aumentar sua receita com conversão de gateway e facilidade de PSP.');
 
 		$this->confirmUninstall = $this->l('Are you really sure you want to uninstall this module ?');
-		
+
 		$this->limited_countries = array('BR');
 
 		$this->limited_currencies = array('BRL');
@@ -92,16 +92,16 @@ class Pagarmeps extends PaymentModule
 			$this->_errors[] = $this->l('This module is not available in your country');
 			return false;
 		}
-		
+
 		include(dirname(__FILE__).'/sql/install.php');
 
 		Configuration::updateValue('PAGARME_LIVE_MODE', false);
 		Configuration::updateValue('PAGARME_ACTIVATE_LOG', false);
-		
+
 		//Shop name for Soft Descriptor
 		$shop_name = Configuration::get('PS_SHOP_NAME');
 		Configuration::updateValue('PAGARME_SOFT_DESCRIPTOR', Tools::substr($shop_name, 0, 13));
-		
+
 		//Order State
 		if(!$this->createStates()) {
 			$this->_errors[] = $this->l('can\'t create states');
@@ -109,30 +109,30 @@ class Pagarmeps extends PaymentModule
 		}
 
 		return parent::install() &&
-			$this->registerHook('header') &&
-			$this->registerHook('displayHeader') &&
-			$this->registerHook('backOfficeHeader') &&
-			$this->registerHook('payment') &&
-			$this->registerHook('paymentReturn') &&
-			$this->registerHook('actionPaymentCCAdd') &&
-			$this->registerHook('actionPaymentConfirmation') &&
-			$this->registerHook('displayHeader') &&
-			$this->registerHook('displayPayment') &&
-			$this->registerHook('displayPaymentReturn') &&
-			$this->registerHook('displayPaymentTop') &&
-			$this->registerHook('productActions') &&
-			$this->registerHook('cart') &&
-			$this->registerHook('displayShoppingCart') &&
-			$this->registerHook('shoppingCartExtra') &&
-			$this->registerHook('customerAccount');
+		$this->registerHook('header') &&
+		$this->registerHook('displayHeader') &&
+		$this->registerHook('backOfficeHeader') &&
+		$this->registerHook('payment') &&
+		$this->registerHook('paymentReturn') &&
+		$this->registerHook('actionPaymentCCAdd') &&
+		$this->registerHook('actionPaymentConfirmation') &&
+		$this->registerHook('displayHeader') &&
+		$this->registerHook('displayPayment') &&
+		$this->registerHook('displayPaymentReturn') &&
+		$this->registerHook('displayPaymentTop') &&
+		$this->registerHook('productActions') &&
+		$this->registerHook('cart') &&
+		$this->registerHook('displayShoppingCart') &&
+		$this->registerHook('shoppingCartExtra') &&
+		$this->registerHook('customerAccount');
 	}
 
 	public function uninstall()
 	{
 		include(dirname(__FILE__).'/sql/uninstall.php');
-		
+
 		Configuration::deleteByName('PAGARME_LIVE_MODE');
-		
+
 		$order_state = new OrderState(Configuration::get('PAGARME_DEFAULT_PROCESSING'));
 		$order_state->delete();
 		$order_state = new OrderState(Configuration::get('PAGARME_DEFAULT_WAITING_PAYMENT'));
@@ -147,7 +147,7 @@ class Pagarmeps extends PaymentModule
 		$order_state->delete();
 		$order_state = new OrderState(Configuration::get('PAGARME_DEFAULT_REFUSED'));
 		$order_state->delete();
-		
+
 		Configuration::deleteByName('PAGARME_DEFAULT_PROCESSING');
 		Configuration::deleteByName('PAGARME_DEFAULT_WAITING_PAYMENT');
 		Configuration::deleteByName('PAGARME_DEFAULT_AUTHORIZED');
@@ -161,17 +161,17 @@ class Pagarmeps extends PaymentModule
 		Configuration::deleteByName('PAGARME_ENCRYPTION_KEY');
 		Configuration::deleteByName('PAGARME_PAY_WAY');
 		Configuration::deleteByName('PAGARME_ONE_CLICK_BUY');
-		
+
 		return parent::uninstall();
 	}
-	
+
 	public function createStates()
 	{
 		//$languages = Language::getLanguages();
 		/*
-		processing, authorized, paid, refunded, waiting_payment, pending_refund, refused
-		
-		*/
+        processing, authorized, paid, refunded, waiting_payment, pending_refund, refused
+
+        */
 
 		//PROCESSING
 		$order_state = new OrderState();
@@ -202,8 +202,8 @@ class Pagarmeps extends PaymentModule
 		Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
 		Configuration::updateValue('PAGARME_DEFAULT_STATUS', $order_state->id);
 		Configuration::updateValue('PAGARME_DEFAULT_PROCESSING', $order_state->id);
-		
-		
+
+
 		//WAITING_PAYMENT
 		$order_state = new OrderState();
 		$order_state->invoice = false;
@@ -232,8 +232,8 @@ class Pagarmeps extends PaymentModule
 		$file = _PS_ROOT_DIR_.'/img/os/'.(int)$order_state->id.'.gif';
 		Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
 		Configuration::updateValue('PAGARME_DEFAULT_WAITING_PAYMENT', $order_state->id);
-		
-		
+
+
 		//AUTHORIZED
 		$order_state = new OrderState();
 		$order_state->invoice = false;
@@ -261,9 +261,9 @@ class Pagarmeps extends PaymentModule
 		$file = _PS_ROOT_DIR_.'/img/os/'.(int)$order_state->id.'.gif';
 		Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
 		Configuration::updateValue('PAGARME_DEFAULT_AUTHORIZED', $order_state->id);
-		
-		
-		
+
+
+
 		//PAID
 		$order_state = new OrderState();
 		$order_state->invoice = false;
@@ -292,8 +292,8 @@ class Pagarmeps extends PaymentModule
 		$file = _PS_ROOT_DIR_.'/img/os/'.(int)$order_state->id.'.gif';
 		Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
 		Configuration::updateValue('PAGARME_DEFAULT_PAID', $order_state->id);
-		
-		
+
+
 		//PENDING_REFUND
 		$order_state = new OrderState();
 		$order_state->invoice = false;
@@ -322,7 +322,7 @@ class Pagarmeps extends PaymentModule
 		$file = _PS_ROOT_DIR_.'/img/os/'.(int)$order_state->id.'.gif';
 		Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
 		Configuration::updateValue('PAGARME_DEFAULT_PENDING_REFUND', $order_state->id);
-		
+
 		//REFUNDED
 		$order_state = new OrderState();
 		$order_state->invoice = false;
@@ -352,9 +352,9 @@ class Pagarmeps extends PaymentModule
 		Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
 		Configuration::updateValue('PAGARME_DEFAULT_REFUNDED', $order_state->id);
 
-		
-		
-		
+
+
+
 		//REFUSED
 		$order_state = new OrderState();
 		$order_state->invoice = false;
@@ -383,7 +383,7 @@ class Pagarmeps extends PaymentModule
 		$file = _PS_ROOT_DIR_.'/img/os/'.(int)$order_state->id.'.gif';
 		Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
 		Configuration::updateValue('PAGARME_DEFAULT_REFUSED', $order_state->id);
-			
+
 		return true;
 	}
 
@@ -398,7 +398,7 @@ class Pagarmeps extends PaymentModule
 		if (((bool)Tools::isSubmit('submitPagarmeModule')) == true) {
 			$this->postProcess();
 		}
-		
+
 		$this->context->smarty->assign('module_dir', $this->_path);
 
 		$output = $this->context->smarty->fetch($this->local_path.'views/templates/admin/configure.tpl');
@@ -442,8 +442,8 @@ class Pagarmeps extends PaymentModule
 		return array(
 			'form' => array(
 				'legend' => array(
-				'title' => $this->l('Settings'),
-				'icon' => 'icon-cogs',
+					'title' => $this->l('Settings'),
+					'icon' => 'icon-cogs',
 				),
 				'input' => array(
 					array(
@@ -474,18 +474,18 @@ class Pagarmeps extends PaymentModule
 						'label' => $this->l('Integration'),
 						'options' => array(
 							'id' => 'id_integration',
-							'name' => 'name', 
+							'name' => 'name',
 							'query' => array(
-										  array(
-											'id_integration' => 'checkout_transparente',                 // The value of the 'value' attribute of the <option> tag.
-											'name' => $this->l('Checkout Transparente'),             // The value of the text content of the  <option> tag.
-										  ),
-										  array(
-											'id_integration' => 'gateway',                 // The value of the 'value' attribute of the <option> tag.
-											'name' => $this->l('Gateway Simples'),               // The value of the text content of the  <option> tag.
-										  ),
-										),                                          
-						  ),
+								array(
+									'id_integration' => 'checkout_transparente',                 // The value of the 'value' attribute of the <option> tag.
+									'name' => $this->l('Checkout Transparente'),             // The value of the text content of the  <option> tag.
+								),
+								array(
+									'id_integration' => 'gateway',                 // The value of the 'value' attribute of the <option> tag.
+									'name' => $this->l('Gateway Simples'),               // The value of the text content of the  <option> tag.
+								),
+							),
+						),
 					),
 					array(
 						'type' => 'text',
@@ -510,22 +510,22 @@ class Pagarmeps extends PaymentModule
 						'label' => $this->l('Payment way'),
 						'options' => array(
 							'id' => 'id_payway',
-							'name' => 'name', 
+							'name' => 'name',
 							'query' => array(
-										  array(
-											'id_payway' => 'both',                 // The value of the 'value' attribute of the <option> tag.
-											'name' => $this->l('Credit Card and Boleto'),             // The value of the text content of the  <option> tag.
-										  ),
-										  array(
-											'id_payway' => 'credit_card',                 // The value of the 'value' attribute of the <option> tag.
-											'name' => $this->l('Credit Card only'),               // The value of the text content of the  <option> tag.
-										  ),
-										  array(
-											'id_payway' => 'boleto',                 // The value of the 'value' attribute of the <option> tag.
-											'name' => $this->l('Boleto only'),               // The value of the text content of the  <option> tag.
-										  ),
-										),                                          
-						  ),
+								array(
+									'id_payway' => 'both',                 // The value of the 'value' attribute of the <option> tag.
+									'name' => $this->l('Credit Card and Boleto'),             // The value of the text content of the  <option> tag.
+								),
+								array(
+									'id_payway' => 'credit_card',                 // The value of the 'value' attribute of the <option> tag.
+									'name' => $this->l('Credit Card only'),               // The value of the text content of the  <option> tag.
+								),
+								array(
+									'id_payway' => 'boleto',                 // The value of the 'value' attribute of the <option> tag.
+									'name' => $this->l('Boleto only'),               // The value of the text content of the  <option> tag.
+								),
+							),
+						),
 					),
 					array(
 						'type' => 'switch',
@@ -578,32 +578,32 @@ class Pagarmeps extends PaymentModule
 						'desc' => $this->l('Maximum installment number'),
 						'options' => array(
 							'id' => 'id_max',
-							'name' => 'name', 
+							'name' => 'name',
 							'query' => array(
-								  array('id_max' => '2', 'name' => '2 '.$this->l('Times')),
-								  array('id_max' => '3', 'name' => '3 '.$this->l('Times')),
-								  array('id_max' => '4', 'name' => '4 '.$this->l('Times')),
-								  array('id_max' => '5', 'name' => '5 '.$this->l('Times')),
-								  array('id_max' => '6', 'name' => '6 '.$this->l('Times')),
-								  array('id_max' => '7', 'name' => '7 '.$this->l('Times')),
-								  array('id_max' => '8', 'name' => '8 '.$this->l('Times')),
-								  array('id_max' => '9', 'name' => '9 '.$this->l('Times')),
-								  array('id_max' => '10', 'name' => '10 '.$this->l('Times')),
-								  array('id_max' => '11', 'name' => '11 '.$this->l('Times')),
-								  array('id_max' => '12', 'name' => '12 '.$this->l('Times')),
-								  /*array('id_max' => '13', 'name' => '13 '.$this->l('Times')),
-								  array('id_max' => '14', 'name' => '14 '.$this->l('Times')),
-								  array('id_max' => '15', 'name' => '15 '.$this->l('Times')),
-								  array('id_max' => '16', 'name' => '16 '.$this->l('Times')),
-								  array('id_max' => '17', 'name' => '17 '.$this->l('Times')),
-								  array('id_max' => '18', 'name' => '18 '.$this->l('Times')),
-								  array('id_max' => '19', 'name' => '19 '.$this->l('Times')),
-								  array('id_max' => '20', 'name' => '20 '.$this->l('Times')),
-								  array('id_max' => '21', 'name' => '21 '.$this->l('Times')),
-								  array('id_max' => '22', 'name' => '22 '.$this->l('Times')),
-								  array('id_max' => '23', 'name' => '23 '.$this->l('Times')),
-								  array('id_max' => '24', 'name' => '24 '.$this->l('Times')),*/
-							),                                          
+								array('id_max' => '2', 'name' => '2 '.$this->l('Times')),
+								array('id_max' => '3', 'name' => '3 '.$this->l('Times')),
+								array('id_max' => '4', 'name' => '4 '.$this->l('Times')),
+								array('id_max' => '5', 'name' => '5 '.$this->l('Times')),
+								array('id_max' => '6', 'name' => '6 '.$this->l('Times')),
+								array('id_max' => '7', 'name' => '7 '.$this->l('Times')),
+								array('id_max' => '8', 'name' => '8 '.$this->l('Times')),
+								array('id_max' => '9', 'name' => '9 '.$this->l('Times')),
+								array('id_max' => '10', 'name' => '10 '.$this->l('Times')),
+								array('id_max' => '11', 'name' => '11 '.$this->l('Times')),
+								array('id_max' => '12', 'name' => '12 '.$this->l('Times')),
+								/*array('id_max' => '13', 'name' => '13 '.$this->l('Times')),
+                                array('id_max' => '14', 'name' => '14 '.$this->l('Times')),
+                                array('id_max' => '15', 'name' => '15 '.$this->l('Times')),
+                                array('id_max' => '16', 'name' => '16 '.$this->l('Times')),
+                                array('id_max' => '17', 'name' => '17 '.$this->l('Times')),
+                                array('id_max' => '18', 'name' => '18 '.$this->l('Times')),
+                                array('id_max' => '19', 'name' => '19 '.$this->l('Times')),
+                                array('id_max' => '20', 'name' => '20 '.$this->l('Times')),
+                                array('id_max' => '21', 'name' => '21 '.$this->l('Times')),
+                                array('id_max' => '22', 'name' => '22 '.$this->l('Times')),
+                                array('id_max' => '23', 'name' => '23 '.$this->l('Times')),
+                                array('id_max' => '24', 'name' => '24 '.$this->l('Times')),*/
+							),
 						),
 					),
 					array(
@@ -621,34 +621,34 @@ class Pagarmeps extends PaymentModule
 						'desc' => $this->l('Parcels without tax application'),
 						'options' => array(
 							'id' => 'id_max',
-							'name' => 'name', 
+							'name' => 'name',
 							'query' => array(
-								  array('id_max' => 'all', 'name' => $this->l('Without tax at all')),
-								  array('id_max' => 'none', 'name' => $this->l('Every parcel with tax')),
-								  array('id_max' => '2', 'name' => '2 '.$this->l('Parcels without tax')),
-								  array('id_max' => '3', 'name' => '3 '.$this->l('Parcels without tax')),
-								  array('id_max' => '4', 'name' => '4 '.$this->l('Parcels without tax')),
-								  array('id_max' => '5', 'name' => '5 '.$this->l('Parcels without tax')),
-								  array('id_max' => '6', 'name' => '6 '.$this->l('Parcels without tax')),
-								  array('id_max' => '7', 'name' => '7 '.$this->l('Parcels without tax')),
-								  array('id_max' => '8', 'name' => '8 '.$this->l('Parcels without tax')),
-								  array('id_max' => '9', 'name' => '9 '.$this->l('Parcels without tax')),
-								  array('id_max' => '10', 'name' => '10 '.$this->l('Parcels without tax')),
-								  array('id_max' => '11', 'name' => '11 '.$this->l('Parcels without tax')),
-								  array('id_max' => '12', 'name' => '12 '.$this->l('Parcels without tax')),
-								  /*array('id_max' => '13', 'name' => '13 '.$this->l('Parcels without tax')),
-								  array('id_max' => '14', 'name' => '14 '.$this->l('Parcels without tax')),
-								  array('id_max' => '15', 'name' => '15 '.$this->l('Parcels without tax')),
-								  array('id_max' => '16', 'name' => '16 '.$this->l('Parcels without tax')),
-								  array('id_max' => '17', 'name' => '17 '.$this->l('Parcels without tax')),
-								  array('id_max' => '18', 'name' => '18 '.$this->l('Parcels without tax')),
-								  array('id_max' => '19', 'name' => '19 '.$this->l('Parcels without tax')),
-								  array('id_max' => '20', 'name' => '20 '.$this->l('Parcels without tax')),
-								  array('id_max' => '21', 'name' => '21 '.$this->l('Parcels without tax')),
-								  array('id_max' => '22', 'name' => '22 '.$this->l('Parcels without tax')),
-								  array('id_max' => '23', 'name' => '23 '.$this->l('Parcels without tax')),
-								  array('id_max' => '24', 'name' => '24 '.$this->l('Parcels without tax')),*/
-							),                                          
+								array('id_max' => 'all', 'name' => $this->l('Without tax at all')),
+								array('id_max' => 'none', 'name' => $this->l('Every parcel with tax')),
+								array('id_max' => '2', 'name' => '2 '.$this->l('Parcels without tax')),
+								array('id_max' => '3', 'name' => '3 '.$this->l('Parcels without tax')),
+								array('id_max' => '4', 'name' => '4 '.$this->l('Parcels without tax')),
+								array('id_max' => '5', 'name' => '5 '.$this->l('Parcels without tax')),
+								array('id_max' => '6', 'name' => '6 '.$this->l('Parcels without tax')),
+								array('id_max' => '7', 'name' => '7 '.$this->l('Parcels without tax')),
+								array('id_max' => '8', 'name' => '8 '.$this->l('Parcels without tax')),
+								array('id_max' => '9', 'name' => '9 '.$this->l('Parcels without tax')),
+								array('id_max' => '10', 'name' => '10 '.$this->l('Parcels without tax')),
+								array('id_max' => '11', 'name' => '11 '.$this->l('Parcels without tax')),
+								array('id_max' => '12', 'name' => '12 '.$this->l('Parcels without tax')),
+								/*array('id_max' => '13', 'name' => '13 '.$this->l('Parcels without tax')),
+                                array('id_max' => '14', 'name' => '14 '.$this->l('Parcels without tax')),
+                                array('id_max' => '15', 'name' => '15 '.$this->l('Parcels without tax')),
+                                array('id_max' => '16', 'name' => '16 '.$this->l('Parcels without tax')),
+                                array('id_max' => '17', 'name' => '17 '.$this->l('Parcels without tax')),
+                                array('id_max' => '18', 'name' => '18 '.$this->l('Parcels without tax')),
+                                array('id_max' => '19', 'name' => '19 '.$this->l('Parcels without tax')),
+                                array('id_max' => '20', 'name' => '20 '.$this->l('Parcels without tax')),
+                                array('id_max' => '21', 'name' => '21 '.$this->l('Parcels without tax')),
+                                array('id_max' => '22', 'name' => '22 '.$this->l('Parcels without tax')),
+                                array('id_max' => '23', 'name' => '23 '.$this->l('Parcels without tax')),
+                                array('id_max' => '24', 'name' => '24 '.$this->l('Parcels without tax')),*/
+							),
 						),
 					),
 					array(
@@ -658,39 +658,39 @@ class Pagarmeps extends PaymentModule
 						'desc' => $this->l('Days before the due date of the boletos'),
 						'options' => array(
 							'id' => 'id_max',
-							'name' => 'name', 
+							'name' => 'name',
 							'query' => array(
-								  array('id_max' => '2', 'name' => '2 '.$this->l('Days')),
-								  array('id_max' => '3', 'name' => '3 '.$this->l('Days')),
-								  array('id_max' => '4', 'name' => '4 '.$this->l('Days')),
-								  array('id_max' => '5', 'name' => '5 '.$this->l('Days')),
-								  array('id_max' => '6', 'name' => '6 '.$this->l('Days')),
-								  array('id_max' => '7', 'name' => '7 '.$this->l('Days')),
-								  array('id_max' => '8', 'name' => '8 '.$this->l('Days')),
-								  array('id_max' => '9', 'name' => '9 '.$this->l('Days')),
-								  array('id_max' => '10', 'name' => '10 '.$this->l('Days')),
-								  array('id_max' => '11', 'name' => '11 '.$this->l('Days')),
-								  array('id_max' => '12', 'name' => '12 '.$this->l('Days')),
-								  array('id_max' => '13', 'name' => '13 '.$this->l('Days')),
-								  array('id_max' => '14', 'name' => '14 '.$this->l('Days')),
-								  array('id_max' => '15', 'name' => '15 '.$this->l('Days')),
-								  array('id_max' => '16', 'name' => '16 '.$this->l('Days')),
-								  array('id_max' => '17', 'name' => '17 '.$this->l('Days')),
-								  array('id_max' => '18', 'name' => '18 '.$this->l('Days')),
-								  array('id_max' => '19', 'name' => '19 '.$this->l('Days')),
-								  array('id_max' => '20', 'name' => '20 '.$this->l('Days')),
-								  array('id_max' => '21', 'name' => '21 '.$this->l('Days')),
-								  array('id_max' => '22', 'name' => '22 '.$this->l('Days')),
-								  array('id_max' => '23', 'name' => '23 '.$this->l('Days')),
-								  array('id_max' => '24', 'name' => '24 '.$this->l('Days')),
-								  array('id_max' => '25', 'name' => '25 '.$this->l('Days')),
-								  array('id_max' => '26', 'name' => '26 '.$this->l('Days')),
-								  array('id_max' => '27', 'name' => '27 '.$this->l('Days')),
-								  array('id_max' => '28', 'name' => '28 '.$this->l('Days')),
-								  array('id_max' => '29', 'name' => '29 '.$this->l('Days')),
-								  array('id_max' => '30', 'name' => '30 '.$this->l('Days')),
-								  array('id_max' => '31', 'name' => '31 '.$this->l('Days')),
-							),                                          
+								array('id_max' => '2', 'name' => '2 '.$this->l('Days')),
+								array('id_max' => '3', 'name' => '3 '.$this->l('Days')),
+								array('id_max' => '4', 'name' => '4 '.$this->l('Days')),
+								array('id_max' => '5', 'name' => '5 '.$this->l('Days')),
+								array('id_max' => '6', 'name' => '6 '.$this->l('Days')),
+								array('id_max' => '7', 'name' => '7 '.$this->l('Days')),
+								array('id_max' => '8', 'name' => '8 '.$this->l('Days')),
+								array('id_max' => '9', 'name' => '9 '.$this->l('Days')),
+								array('id_max' => '10', 'name' => '10 '.$this->l('Days')),
+								array('id_max' => '11', 'name' => '11 '.$this->l('Days')),
+								array('id_max' => '12', 'name' => '12 '.$this->l('Days')),
+								array('id_max' => '13', 'name' => '13 '.$this->l('Days')),
+								array('id_max' => '14', 'name' => '14 '.$this->l('Days')),
+								array('id_max' => '15', 'name' => '15 '.$this->l('Days')),
+								array('id_max' => '16', 'name' => '16 '.$this->l('Days')),
+								array('id_max' => '17', 'name' => '17 '.$this->l('Days')),
+								array('id_max' => '18', 'name' => '18 '.$this->l('Days')),
+								array('id_max' => '19', 'name' => '19 '.$this->l('Days')),
+								array('id_max' => '20', 'name' => '20 '.$this->l('Days')),
+								array('id_max' => '21', 'name' => '21 '.$this->l('Days')),
+								array('id_max' => '22', 'name' => '22 '.$this->l('Days')),
+								array('id_max' => '23', 'name' => '23 '.$this->l('Days')),
+								array('id_max' => '24', 'name' => '24 '.$this->l('Days')),
+								array('id_max' => '25', 'name' => '25 '.$this->l('Days')),
+								array('id_max' => '26', 'name' => '26 '.$this->l('Days')),
+								array('id_max' => '27', 'name' => '27 '.$this->l('Days')),
+								array('id_max' => '28', 'name' => '28 '.$this->l('Days')),
+								array('id_max' => '29', 'name' => '29 '.$this->l('Days')),
+								array('id_max' => '30', 'name' => '30 '.$this->l('Days')),
+								array('id_max' => '31', 'name' => '31 '.$this->l('Days')),
+							),
 						),
 					),
 					array(
@@ -761,8 +761,8 @@ class Pagarmeps extends PaymentModule
 	}
 
 	/**
-	* Add the CSS & JavaScript files you want to be loaded in the BO.
-	*/
+	 * Add the CSS & JavaScript files you want to be loaded in the BO.
+	 */
 	public function hookBackOfficeHeader()
 	{
 		if (Tools::getValue('module_name') == $this->name)
@@ -787,18 +787,18 @@ class Pagarmeps extends PaymentModule
 	 */
 	public function hookPayment($params)
 	{
-//		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
-//			return;
+		//		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
+		//			return;
 
 		$currency_id = $params['cart']->id_currency;
 		$currency = new Currency((int)$currency_id);
-		
+
 		if (in_array($currency->iso_code, $this->limited_currencies) == false)
 			return false;
-			
+
 		$encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
 		$api_key = Configuration::get('PAGARME_API_KEY');
-		
+
 		if (empty($encryption_key) || empty($api_key))
 			return false;
 
@@ -806,7 +806,7 @@ class Pagarmeps extends PaymentModule
 
 		$integrationMode = Configuration::get('PAGARME_INTEGRATION_MODE');
 		$payWay = Configuration::get('PAGARME_PAY_WAY');
-		
+
 		$return = '';
 		if($integrationMode == 'checkout_transparente') {
 
@@ -853,6 +853,14 @@ class Pagarmeps extends PaymentModule
 				}
 			}
 
+
+
+			$addressNumber = explode(',',$address->address1);
+
+			if (isset($addressNumber[1])) {
+				$addressNumber = $addressNumber[1];
+			}
+
 			$this->context->smarty->assign(array(
 				'cart_id' => $cart->id,
 				'total_order' => $total_order,
@@ -863,7 +871,7 @@ class Pagarmeps extends PaymentModule
 				'customer_name' => $customer->firstname.' '.$customer->lastname,
 				'customer_email' => $customer->email,
 				'address_street' => $address->address1,
-				'address_street_number' => filter_var($address->address1, FILTER_SANITIZE_NUMBER_INT),
+				'address_street_number' => filter_var($addressNumber, FILTER_SANITIZE_NUMBER_INT),
 				'address_complementary' => $address->other,
 				'address_neighborhood' => $address->address2,
 				'address_city' => $address->city,
@@ -878,18 +886,18 @@ class Pagarmeps extends PaymentModule
 			));
 			$this->smarty->assign('pay_way', $payWay);
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-transparent.tpl');
-			
+
 		} else if($integrationMode == 'gateway' && $payWay == 'credit_card') {
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-card.tpl');
-			
+
 		} else if($integrationMode == 'gateway' && $payWay == 'boleto') {
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-boleto.tpl');
-			
+
 		} else if($integrationMode == 'gateway' && $payWay == 'both') {
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-card.tpl');
 			$return = $return.$this->display(__FILE__, 'views/templates/hook/payment-boleto.tpl');
 		}
-		
+
 		//One Click Buy
 		if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
 			$cart = Context::getContext()->cart;
@@ -897,7 +905,7 @@ class Pagarmeps extends PaymentModule
 				$return = $return.$this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
 			}
 		}
-		
+
 		return $return;
 	}
 
@@ -908,14 +916,14 @@ class Pagarmeps extends PaymentModule
 	{
 		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
 			return;
-			
+
 		$order = $params['objOrder'];
 		$transactionId = PagarmepsTransactionClass::getTransactionIdByOrderId($order->id);
-		
+
 		$api_key = Configuration::get('PAGARME_API_KEY');
 		Pagarme::setApiKey($api_key);
 		$transaction = PagarMe_Transaction::findById($transactionId);
-		
+
 		$boleto_url = $transaction->boleto_url; // URL do boleto bancário
 		$boleto_barcode = $transaction->boleto_barcode; // código de barras do boleto bancário
 
@@ -962,22 +970,22 @@ class Pagarmeps extends PaymentModule
 	public function hookDisplayPaymentTop()
 	{
 	}
-	
-	
+
+
 	public function hookProductActions($params)
 	{
 		/*$cookie = $params['cookie'];
 
-		$this->smarty->assign(array(
-			'id_product' => (int)Tools::getValue('id_product'),
-		));
+        $this->smarty->assign(array(
+            'id_product' => (int)Tools::getValue('id_product'),
+        ));
 
-		if (isset($cookie->id_customer))
-			$this->smarty->assign(array(
-				'wishlists' => WishList::getByIdCustomer($cookie->id_customer),
-			));
+        if (isset($cookie->id_customer))
+            $this->smarty->assign(array(
+                'wishlists' => WishList::getByIdCustomer($cookie->id_customer),
+            ));
 
-		return ($this->display(__FILE__, 'blockwishlist-extra.tpl'));*/
+        return ($this->display(__FILE__, 'blockwishlist-extra.tpl'));*/
 	}
 
 	public function hookCustomerAccount($params)
@@ -993,8 +1001,8 @@ class Pagarmeps extends PaymentModule
 	{
 		return $this->hookCustomerAccount($params);
 	}
-	
-	
+
+
 	public function hookShoppingCartExtra($params)
 	{
 		if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
@@ -1003,27 +1011,27 @@ class Pagarmeps extends PaymentModule
 					'id_customer' => (int)$params['cookie']->id_customer,
 					'zone' => 'cart-extra',
 				));
-					
+
 				return $this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
 			}
 		}
 	}
-	
+
 	public function hookDisplayShoppingCart($params)
 	{
 		return $this->hookShoppingCartExtra($params);
 	}
-	
-	
+
+
 	public function getPath()
 	{
 		return $this->_path;
 	}
-	
+
 	public static function getStatusId($state) {
 		$idStatus = Configuration::get('PAGARME_DEFAULT_STATUS');
 		//processing, waiting_payment, authorized, paid, pending_refund, refunded, refused
-		
+
 		if($state == 'processing') {
 			$idStatus = Configuration::get('PAGARME_DEFAULT_PROCESSING');
 		} else if ($state == 'waiting_payment') {
@@ -1041,21 +1049,21 @@ class Pagarmeps extends PaymentModule
 		}
 		return $idStatus;
 	}
-	
+
 	public static function getInstallmentOptions($amount) {
 		$installmentsReturn = null;
-		
+
 		//If installment option is activated
 		if((bool)Configuration::get('PAGARME_INSTALLMENT') == true) {
-			
+
 			$interest_rate = 0;
 			$conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX');
 			if( !empty($conf_val)) {
 				$interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
 			}
-		
+
 			$max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
-			
+
 			$free_installments = 1;
 			$conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
 			if(!empty($conf_val)){
@@ -1066,12 +1074,12 @@ class Pagarmeps extends PaymentModule
 					$free_installments = 1;
 				}
 			}
-			
+
 			$api_key = Configuration::get('PAGARME_API_KEY');
 			Pagarme::setApiKey($api_key);
 			$installments = PagarMe_Transaction::calculateInstallmentsAmount($amount*100, $interest_rate, $max_installments, $free_installments);
 			$installmentsReturn = array();
-			
+
 			$installment_min_value = Configuration::get('PAGARME_INSTALLMENT_MIN_VALUE');
 			foreach ($installments['installments'] as $key => $installment) {
 				if($installment['installment_amount']/100 >= $installment_min_value) {
@@ -1079,26 +1087,26 @@ class Pagarmeps extends PaymentModule
 				}
 			}
 		}
-		
+
 		return $installmentsReturn;
-		
+
 	}
-	
+
 	public static function getInstallmentMaxi($value) {
 		$options = Pagarmeps::getInstallmentOptions($value);
 		return count($options);
 	}
-	
+
 	public static function addLog($message, $severity = 1, $error_code = null, $object_type = null, $object_id = null, $allow_duplicate = false, $id_employee = null) {
 		if ((bool)Configuration::get('PAGARME_ACTIVATE_LOG') == true) {
 			PrestaShopLogger::addLog($message.' TS='.microtime(), $severity, $error_code, $object_type, $object_id, $allow_duplicate, $id_employee);
 		}
 	}
-	
+
 	/*
-	* There si no standar in PS for CPF or CNPJ. Many addons are implementing it in their own way
-	* So this function have to be adapted for each kind of implementation, and will be used internaly to get CPF / CNPJ information
-	*/
+    * There si no standar in PS for CPF or CNPJ. Many addons are implementing it in their own way
+    * So this function have to be adapted for each kind of implementation, and will be used internaly to get CPF / CNPJ information
+    */
 	public static function getCustomerCPFouCNPJ($address, $id_customer)
 	{
 		try {
