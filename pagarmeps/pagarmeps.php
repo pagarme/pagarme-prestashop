@@ -223,7 +223,6 @@ class Pagarmeps extends PaymentModule
 		foreach (Language::getLanguages(false) as $language)
 		{
 			$order_state->name[(int)$language['id_lang']] = 'Aguardando Pagamento';
-			//$order_state->template[(int)$language['id_lang']] = 'refund';
 		}
 
 		if (!$order_state->add())
@@ -591,18 +590,6 @@ class Pagarmeps extends PaymentModule
 								array('id_max' => '10', 'name' => '10 '.$this->l('Times')),
 								array('id_max' => '11', 'name' => '11 '.$this->l('Times')),
 								array('id_max' => '12', 'name' => '12 '.$this->l('Times')),
-								/*array('id_max' => '13', 'name' => '13 '.$this->l('Times')),
-                                array('id_max' => '14', 'name' => '14 '.$this->l('Times')),
-                                array('id_max' => '15', 'name' => '15 '.$this->l('Times')),
-                                array('id_max' => '16', 'name' => '16 '.$this->l('Times')),
-                                array('id_max' => '17', 'name' => '17 '.$this->l('Times')),
-                                array('id_max' => '18', 'name' => '18 '.$this->l('Times')),
-                                array('id_max' => '19', 'name' => '19 '.$this->l('Times')),
-                                array('id_max' => '20', 'name' => '20 '.$this->l('Times')),
-                                array('id_max' => '21', 'name' => '21 '.$this->l('Times')),
-                                array('id_max' => '22', 'name' => '22 '.$this->l('Times')),
-                                array('id_max' => '23', 'name' => '23 '.$this->l('Times')),
-                                array('id_max' => '24', 'name' => '24 '.$this->l('Times')),*/
 							),
 						),
 					),
@@ -610,6 +597,14 @@ class Pagarmeps extends PaymentModule
 						'type' => 'text',
 						'label' => $this->l('Installment Tax rate'),
 						'name' => 'PAGARME_INSTALLMENT_TAX',
+						'prefix' => '%',
+						'maxlength' => 13,
+						'desc' => $this->l('Installment Tax rate in percent'),
+					),
+					array(
+						'type' => 'text',
+						'label' => $this->l('Desconto Boleto'),
+						'name' => 'PAGARME_DISCOUNT_BOLETO',
 						'prefix' => '%',
 						'maxlength' => 13,
 						'desc' => $this->l('Installment Tax rate in percent'),
@@ -636,18 +631,6 @@ class Pagarmeps extends PaymentModule
 								array('id_max' => '10', 'name' => '10 '.$this->l('Parcels without tax')),
 								array('id_max' => '11', 'name' => '11 '.$this->l('Parcels without tax')),
 								array('id_max' => '12', 'name' => '12 '.$this->l('Parcels without tax')),
-								/*array('id_max' => '13', 'name' => '13 '.$this->l('Parcels without tax')),
-                                array('id_max' => '14', 'name' => '14 '.$this->l('Parcels without tax')),
-                                array('id_max' => '15', 'name' => '15 '.$this->l('Parcels without tax')),
-                                array('id_max' => '16', 'name' => '16 '.$this->l('Parcels without tax')),
-                                array('id_max' => '17', 'name' => '17 '.$this->l('Parcels without tax')),
-                                array('id_max' => '18', 'name' => '18 '.$this->l('Parcels without tax')),
-                                array('id_max' => '19', 'name' => '19 '.$this->l('Parcels without tax')),
-                                array('id_max' => '20', 'name' => '20 '.$this->l('Parcels without tax')),
-                                array('id_max' => '21', 'name' => '21 '.$this->l('Parcels without tax')),
-                                array('id_max' => '22', 'name' => '22 '.$this->l('Parcels without tax')),
-                                array('id_max' => '23', 'name' => '23 '.$this->l('Parcels without tax')),
-                                array('id_max' => '24', 'name' => '24 '.$this->l('Parcels without tax')),*/
 							),
 						),
 					),
@@ -746,6 +729,7 @@ class Pagarmeps extends PaymentModule
 			'PAGARME_INSTALLMENT_TAX_FREE' => Configuration::get('PAGARME_INSTALLMENT_TAX_FREE'),
 			'PAGARME_INSTALLMENT_TAX' => Configuration::get('PAGARME_INSTALLMENT_TAX'),
 			'PAGARME_ACTIVATE_LOG' => Configuration::get('PAGARME_ACTIVATE_LOG'),
+			'PAGARME_DISCOUNT_BOLETO' => Configuration::get('PAGARME_DISCOUNT_BOLETO')
 		);
 	}
 
@@ -853,11 +837,16 @@ class Pagarmeps extends PaymentModule
 				}
 			}
 
-
-
 			$addressNumber = explode(',',$address->address1);
 
 			if (isset($addressNumber[1])) {
+
+				if (isset($addressNumber[2])) {
+					$addressComplement = $addressNumber[2];
+				} else {
+					$addressComplement = null;
+				}
+
 				$addressNumber = $addressNumber[1];
 			}
 
@@ -872,7 +861,7 @@ class Pagarmeps extends PaymentModule
 				'customer_email' => $customer->email,
 				'address_street' => $address->address1,
 				'address_street_number' => filter_var($addressNumber, FILTER_SANITIZE_NUMBER_INT),
-				'address_complementary' => $address->other,
+				'address_complementary' => ($address->other) ? $address->other : $addressComplement,
 				'address_neighborhood' => $address->address2,
 				'address_city' => $address->city,
 				'address_state' => $state->name,
@@ -883,8 +872,10 @@ class Pagarmeps extends PaymentModule
 				'max_installments' => $max_installments,
 				'interest_rate' => $interest_rate,
 				'free_installments' => $free_installments,
+				'boleto_discount_amount' => $this->calculateBoletoDiscount()
 			));
 			$this->smarty->assign('pay_way', $payWay);
+
 			$return = $this->display(__FILE__, 'views/templates/hook/payment-transparent.tpl');
 
 		} else if($integrationMode == 'gateway' && $payWay == 'credit_card') {
@@ -898,15 +889,36 @@ class Pagarmeps extends PaymentModule
 			$return = $return.$this->display(__FILE__, 'views/templates/hook/payment-boleto.tpl');
 		}
 
-		//One Click Buy
-		if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
-			$cart = Context::getContext()->cart;
-			if(PagarmepsCardClass::hasRegisteredCard((int)$cart->id_customer)){
-				$return = $return.$this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
-			}
-		}
+//		//One Click Buy
+//		if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
+//			$cart = Context::getContext()->cart;
+//			if(PagarmepsCardClass::hasRegisteredCard((int)$cart->id_customer)){
+//				$return = $return.$this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
+//			}
+//		}
 
 		return $return;
+	}
+
+	protected function calculateBoletoDiscount()
+	{
+		$taxCalculationMethod = Group::getPriceDisplayMethod((int)Group::getCurrent()->id);
+		$useTax = !($taxCalculationMethod == PS_TAX_EXC);
+
+		$cart = $this->context->cart;
+		$shippingAmount = $cart->getOrderTotal($useTax, Cart::ONLY_SHIPPING, null, $cart->id_carrier, false);
+
+		$totalAmount = $cart->getOrderTotal();
+		$totalAmountFreeShipping = $totalAmount - $shippingAmount;
+
+		$discountAmount = $this->calculatePorcetage(Configuration::get('PAGARME_DISCOUNT_BOLETO'), $totalAmountFreeShipping);
+
+		return number_format($discountAmount, '2', '', '');
+	}
+
+	private function calculatePorcetage($porcentagem, $total)
+	{
+		return ($porcentagem / 100) * $total;
 	}
 
 	/**

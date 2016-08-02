@@ -21,24 +21,24 @@
 *  @copyright 2015 Pagar.me
 *  @version   1.0.0
 *  @link      https://pagar.me/
-*  @license  
+*  @license
 *}
 
 <div class="row">
 	<div class="col-xs-12 col-md-12">
-			{assign var='paymentMethods' value='credit_card,boleto' }
-			{assign var='paymentText' value='Pagar com Cartão ou Boleto' }
-			{if $pay_way == 'boleto'}
-				{assign var='paymentMethods' value='boleto' }
-				{assign var='paymentText' value='Pagar com Boleto' }
-			{elseif $pay_way == 'credit_card'}
-				{assign var='paymentMethods' value='credit_card' }
-				{assign var='paymentText' value='Pagar com Cartão' }
-			{/if}
-	
-			<form class="payment_module {$pay_way|escape:'htmlall':'UTF-8'}" id="pagarme_payment_transparent_auto" method="POST" action="{$link->getModuleLink('pagarmeps', 'confirmation', ['cart_id' => $cart_id, 'secure_key' => $secure_key], true)|escape:'htmlall':'UTF-8'}">
-				<span class="waiting-view" >{l s='Pay with ...' mod='pagarmeps' }</span>
-				<script type="text/javascript"
+		{assign var='paymentMethods' value='credit_card,boleto' }
+		{assign var='paymentText' value='Pagar com Cartão ou Boleto' }
+		{if $pay_way == 'boleto'}
+			{assign var='paymentMethods' value='boleto' }
+			{assign var='paymentText' value='Pagar com Boleto' }
+		{elseif $pay_way == 'credit_card'}
+			{assign var='paymentMethods' value='credit_card' }
+			{assign var='paymentText' value='Pagar com Cartão' }
+		{/if}
+
+		<form class="payment_module {$pay_way|escape:'htmlall':'UTF-8'}" id="pagarme_payment_transparent_auto" method="POST" action="{$link->getModuleLink('pagarmeps', 'confirmation', ['cart_id' => $cart_id, 'secure_key' => $secure_key], true)|escape:'htmlall':'UTF-8'}">
+			<span class="waiting-view" >{l s='Pay with ...' mod='pagarmeps' }</span>
+			<script type="text/javascript"
 					src="https://assets.pagar.me/checkout/checkout.js"
 					data-button-text="{$paymentText|escape:'htmlall':'UTF-8'}"
 					data-encryption-key="{$encryption_key|escape:'htmlall':'UTF-8'}"
@@ -60,8 +60,8 @@
 					data-max-installments="{$max_installments|escape:'htmlall':'UTF-8'}"
 					data-interest-rate="{$interest_rate|escape:'htmlall':'UTF-8'}"
 					data-free-installments="{$free_installments|escape:'htmlall':'UTF-8'}"
-					>
-				</script>
-			</form>
+			>
+			</script>
+		</form>
 	</div>
 </div>

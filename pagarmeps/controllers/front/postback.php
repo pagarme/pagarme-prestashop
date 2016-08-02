@@ -25,7 +25,7 @@
 *  @license  
 */
 
-class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontController
+class PagarmepsPostbackModuleFrontController extends ModuleFrontController
 {
 	/**
 	 * This class should be use by your Instant Payment
@@ -55,30 +55,28 @@ class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontContr
 	 
 	public function postProcess()
 	{
-		Pagarmeps::addLog('1-PostBackTrans', 1, 'info', 'Pagarme', null);
+		Pagarmeps::addLog('1-PostBack', 1, 'info', 'Pagarme', null);
 		/**
 		 * If the module is not active anymore, no need to process anything.
 		 */
 		if ($this->module->active == false) {
-			Pagarmeps::addLog('2-PostBackTrans', 1, 'info', 'Pagarme', null);
+			Pagarmeps::addLog('2-PostBack', 1, 'info', 'Pagarme', null);
 			die('This module is not active');
 		}
 			
 			
 		if ((Tools::isSubmit('id') == false) || (Tools::isSubmit('current_status') == false)) {
-			Pagarmeps::addLog('3-PostBackTrans', 1, 'info', 'Pagarme', null);
+			Pagarmeps::addLog('3-PostBack', 1, 'info', 'Pagarme', null);
 			die('No ID submited, or no Status');
 		}
 		
 		$id = Tools::getValue('id');
 		$current_status = Tools::getValue('current_status');
-		$event = Tools::getValue('event');
-		$old_status = Tools::getValue('old_status');
 		$current_status_id = Pagarmeps::getStatusId($current_status);
-		Pagarmeps::addLog('4-PostBackTrans id='.$id.' | old_status='.$old_status.' | current_status='.$current_status.' | event='.$event, 1, 'info', 'Pagarme', null);
+		Pagarmeps::addLog('4-PostBack id='.$id.' | current_status='.$current_status, 1, 'info', 'Pagarme', null);
 		
 		$order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
-		Pagarmeps::addLog('5-PostBackTrans order_id='.$order_id, 1, 'info', 'Pagarme', null);
+		Pagarmeps::addLog('5-PostBack order_id='.$order_id, 1, 'info', 'Pagarme', null);
 		
 		if($order_id != null) {
 			$order = new Order($order_id);
@@ -86,34 +84,25 @@ class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontContr
 				$order->current_state = $current_status_id;
 				$history = new OrderHistory();
 				$history->id_order = (int)$order->id;
-				$history->changeIdOrderState($current_status_id, (int)$order->id);
-				if($history->addWithemail()){
+
 					if($order->save()){
-						Pagarmeps::addLog('10-PostBackTrans: Everything is OK', 1, 'info', 'Pagarme', null);
+						$history->addWithemail();
+						$history->changeIdOrderState($current_status_id, (int)$order->id);
+						Pagarmeps::addLog('10-PostBack: Everything is OK', 1, 'info', 'Pagarme', null);
 						die('OK');
 					} else {
-						Pagarmeps::addLog('9-PostBackTrans: Error while saving Order', 1, 'info', 'Pagarme', null);
+						Pagarmeps::addLog('9-PostBack: Error while saving Order', 1, 'info', 'Pagarme', null);
+						header('HTTP/1.1 500 Internal Server Error');
+						exit(0);
 					}
-				} else {
-					Pagarmeps::addLog('8-PostBackTrans: Error while updating the order history', 1, 'info', 'Pagarme', null);
-					die('Error while updating the order history');
-				}
+
 			} else {
-				Pagarmeps::addLog('7-PostBackTrans: No order Object found for the saved ID', 1, 'info', 'Pagarme', null);
+				Pagarmeps::addLog('7-PostBack: No order Object found for the saved ID', 1, 'info', 'Pagarme', null);
 				die('No order Object found for the saved ID');
 			}
-		} else { //for a transparent CheckOut, this cas can happen when the callback URL is call befor the serveur processes the form POST
-			Pagarmeps::addLog('6-PostBackTrans: No saved order found for the submited ID (ID='.$id.' - current_status='.$current_status.')', 1, 'info', 'Pagarme', null);
-			//So we save the current state and the transaction ID for 
-			if($current_status != 'authorized'){
-				$pgmTrans = new PagarmepsTransactionClass();
-				$pgmTrans->id_order = 0;
-				$pgmTrans->id_object_pagarme = pSQL($id);
-				$pgmTrans->current_status = pSQL($current_status);
-				if(!$pgmTrans->save()){
-					Pagarmeps::addLog('7-PostBackTrans: Failed Save (id_object_pagarme='.$id.' - current_status='.$current_status.')', 1, 'info', 'Pagarme', null);
-				}
-			}
+		} else {
+			Pagarmeps::addLog('6-PostBack: No saved order found for the submited ID', 1, 'info', 'Pagarme', null);
+			die('No saved order found for the submited ID');
 		}
 		
 		

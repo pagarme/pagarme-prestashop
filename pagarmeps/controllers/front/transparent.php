@@ -44,6 +44,7 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 			$pay_way = Configuration::get('PAGARME_PAY_WAY');
 			$integration_mode = Configuration::get('PAGARME_INTEGRATION_MODE');
 			$encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
+			$boletoDiscount = Configuration::get('PAGARME_DISCOUNT_BOLETO');
 			
 			if(empty($encryption_key)){
 				return $this->displayError('An error occurred, missing configuration for the Pagar.me Module');
@@ -82,11 +83,27 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 				'phone_ddd' => $ddd,
 				'phone_number' => $phone,
 				'customer_document_number' => $customer->siret,
-
+				'boleto_discount_amount' => $this->calculateBoletoDiscount()
 			));
 
 			return $this->setTemplate('redirect-transparent.tpl');
 		}
+	}
+
+	protected function calculateBoletoDiscount()
+	{
+		$taxCalculationMethod = Group::getPriceDisplayMethod((int)Group::getCurrent()->id);
+		$useTax = !($taxCalculationMethod == PS_TAX_EXC);
+
+		$cart = $this->context->cart;
+		$shippingAmount = $cart->getOrderTotal($useTax, Cart::ONLY_SHIPPING, null, $cart->id_carrier, false);
+
+		$totalAmount = $cart->getOrderTotal();
+		$totalAmountFreeShipping = $totalAmount - $shippingAmount;
+
+		$discountAmount = $this->calculatePorcetage(Configuration::get('PAGARME_DISCOUNT_BOLETO'), $totalAmountFreeShipping);
+
+		return number_format($discountAmount, '2', '', '');
 	}
 
 	protected function displayError($message, $description = false)

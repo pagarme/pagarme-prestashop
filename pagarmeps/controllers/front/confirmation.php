@@ -27,17 +27,6 @@
 class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 {
 	private function loader($className) {
-//		//echo 'Trying to load ', $className, ' via ', __METHOD__, "()\n";
-//		if(strrpos($className, 'PagarMe_') !== false) {
-//			$className = Tools::substr($className, 8);
-//			//echo 'Trying to load V2 ', $className, ' via ', __METHOD__, "()\n";
-//			include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
-//		}else if(strrpos($className, 'Pagarmeps') !== false) {
-//			include dirname(__FILE__).'/../../classes/'.$className . '.php';
-//		} else {
-//			include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
-//		}
-		//include dirname(__FILE__).'/../../lib/pagarme/pagarme.php';
 	}
 
 	public function __construct($response = array()) {
@@ -65,12 +54,6 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 		if ((Tools::isSubmit('cart_id') == false) || (Tools::isSubmit('secure_key') == false))
 			return false;
-
-		//if (($integrationMode == 'gateway') && (Tools::isSubmit('payment_way') == false))
-		//	return false;
-
-		//if (($integrationMode == 'checkout_transparente') && (Tools::isSubmit('token') == false))
-		//	return false;
 
 		if ((Tools::getValue('payment_way') == 'card') && (Tools::isSubmit('card_hash') == false))
 			return false;
@@ -112,22 +95,22 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			$payment_method_name = 'Cartão';
 		}
 		$currency_id = (int)Context::getContext()->currency->id;
-		$this->module->validateOrder($cart->id, $payment_status, $cart->getOrderTotal(), $payment_method_name, NULL, array(), $currency_id, false,$secure_key);
+
 		/**
 		 * If the order has been validated we try to retrieve it
 		 */
-		$order_id = Order::getOrderByCartId((int)$cart->id);
-		if ($order_id && ($secure_key == $customer->secure_key))
+		if ($secure_key == $customer->secure_key)
 		{
 			/**
 			 * Pagar.Me Transaction
 			 */
-			$order = new Order($order_id);
+			//$order = new Order($order_id);
 			$api_key = Configuration::get('PAGARME_API_KEY');
 			Pagarme::setApiKey($api_key);
 			$transaction = null;
 			$card_id = null;
 			$ct_payment_method = null;
+
 			try {
 				//Customer informations
 				$customer = new Customer((int)$cart->id_customer);
@@ -139,15 +122,16 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 					$phone = Tools::substr($phone, 2, Tools::strlen($phone));
 				}
 				if($integrationMode == 'gateway') {
-					Pagarmeps::addLog('01-Confirm-Gateway', 1, 'info', 'Pagarme', $order_id);
 					if ($payment_way == 'card' && !empty($card_hash)) {
-						Pagarmeps::addLog('02-Confirm-Gateway-card-start', 1, 'info', 'Pagarme', $order_id);
+
 						$installment = 1;
+
 						if(Tools::isSubmit('installment') != false && (bool)Configuration::get('PAGARME_INSTALLMENT') === true){
 							$installment = Tools::getValue('installment');
 							$maxInstallments = Pagarmeps::getInstallmentMaxi($cart->getOrderTotal());
 							$installment = min($installment, $maxInstallments);
 						}
+
 						$transaction = new PagarMe_Transaction(array(
 							'amount' => $cart->getOrderTotal()*100,
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
@@ -168,17 +152,33 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 									'ddd' => $ddd,
 									'number' => $phone
 								)
-							),
-							'metadata' => array(
-								'id_pedido' => $order_id,
-								'reference' => $order->reference
 							)
 						));
 						$transaction->charge();
+
+						$card = $transaction->getCard();
+						$cardInfo = '<strong> Bandeira : </strong>' . $card->getBrand() . '<strong> Parcelas : </strong>' . $transaction->getInstallments();
+
+						$this->module->validateOrder(
+							$cart->id,
+							$payment_status,
+							$cart->getOrderTotal(),
+							$payment_method_name,
+							NULL,
+							array(
+								'{card_info}' => $cardInfo
+							),
+							$currency_id,
+							false,
+							$secure_key
+						);
+
 						$card_id = $transaction->card->id;
-						Pagarmeps::addLog('03-Confirm-Gateway-card-end CARD-ID='.$card_id.' | postback_url='._PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback', 1, 'info', 'Pagarme', $order_id);
+
 					} else if ($payment_way == 'boleto') {
-						Pagarmeps::addLog('04-Confirm-Gateway-boleto-end', 1, 'info', 'Pagarme', $order_id);
+
+						$this->createDiscountAmount();
+
 						$transaction = new PagarMe_Transaction(array(
 							'amount' => $cart->getOrderTotal()*100,
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
@@ -198,30 +198,56 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 									'ddd' => $ddd,
 									'number' => $phone
 								)
-							),
-							'metadata' => array(
-								'id_pedido' => $order_id,
-								'reference' => $order->reference
 							)
 						));
 						$transaction->charge();
-						Pagarmeps::addLog('05-Confirm-Gateway-boleto-end | postback_url='._PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback', 1, 'info', 'Pagarme', $order_id);
-						//$boleto_url = $transaction->boleto_url;
-						//$boleto_barcode = $transaction->boleto_barcode;
+						$this->module->validateOrder(
+							$cart->id,
+							$payment_status,
+							$cart->getOrderTotal(),
+							$payment_method_name,
+							NULL,
+							array(),
+							$currency_id,
+							false,
+							$secure_key
+						);
+
 					}
 				} else if($integrationMode == 'checkout_transparente' && !empty($token)) {
-					Pagarmeps::addLog('06-Confirm-CTransparent-start token='.$token, 1, 'info', 'Pagarme', $order_id);
-					//	Zend_Debug::dump($cart->getOrderTotal())
 					$transaction = PagarMe_Transaction::findById($token);
-					//$transaction->capture($cart->getOrderTotal()*100);
-					$transaction->captureAdv($cart->getOrderTotal()*100, array(
-						'id_pedido' => $order_id,
-						'reference' => $order->reference
-					));
+
+					if ($transaction->getPaymentMethod() == 'boleto') {
+						$this->createDiscountAmount();
+					}
+
+					$transaction->captureAdv($this->context->cart->getOrderTotal()*100, array());
 					$ct_payment_method = $transaction->payment_method;
-					Pagarmeps::addLog('07-Confirm-CTransparent-end CARD-ID='.$card_id.' | TRANS-ID='.$transaction->id, 1, 'info', 'Pagarme', $order_id);
+
+					if ($transaction->getPaymentMethod() == 'credit_card') {
+						$card = $transaction->getCard();
+						$cardInfo = '<strong> Bandeira : </strong>' . $card->getBrand() . '<strong> Parcelas : </strong>' . $transaction->getInstallments();
+						$paymentMethodName = 'Cartão';
+					} else {
+						$cardInfo = null;
+						$paymentMethodName = 'Boleto';
+					}
+
+					$this->module->validateOrder(
+						$this->context->cart->id,
+						$payment_status,
+						$this->context->cart->getOrderTotal(),
+						$paymentMethodName,
+						NULL,
+						array(
+							'{card_info}' => $cardInfo
+						),
+						$currency_id,
+						false,
+						$secure_key
+					);
+
 				} else if ($oneClickBuy == true && $payment_way == 'oneclickbuy') {
-					Pagarmeps::addLog('08-Confirm-OneBuyClick-start', 1, 'info', 'Pagarme', $order_id);
 					$card = PagarMe_Card::findById($choosen_card);
 					$transaction = new PagarMe_Transaction(array(
 						'amount' => $cart->getOrderTotal()*100,
@@ -242,22 +268,57 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 								'ddd' => $ddd,
 								'number' => $phone
 							)
-						),
-						'metadata' => array(
-							'id_pedido' => $order_id,
-							'reference' => $order->reference
 						)
 					));
 					$transaction->charge();
-					Pagarmeps::addLog('09-Confirm-OneBuyClick-end | postback_url='._PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback', 1, 'info', 'Pagarme', $order_id);
+
+					$card = $transaction->getCard();
+					$cardInfo = '<strong> Bandeira : </strong>' . $card->getBrand() . '<strong> Parcelas : </strong>' . $transaction->getInstallments();
+
+					$this->module->validateOrder(
+						$cart->id,
+						$payment_status,
+						$cart->getOrderTotal(),
+						$payment_method_name,
+						NULL,
+						array(
+							'{card_info}' => $cardInfo
+						),
+						$currency_id,
+						false,
+						$secure_key
+					);
+
 				}
 			} catch (PagarMe_Exception $e) {
 				$expMessage = $e->getMessage();
-				Pagarmeps::addLog('10-Confirm-CATCH: '.$expMessage, 1, 'info', 'Pagarme', $order_id);
 				$this->errors[] = $this->module->l('An error occured. Please contact the merchant to have more informations');
 				$this->errors[] = $expMessage;
 				return $this->setTemplate('error.tpl');
 			}
+
+			$order_id = Order::getOrderByCartId((int)$cart->id);
+			$order = new Order($order_id);
+
+			if ($order) {
+
+				$order_payments = $order->getOrderPayments();
+				foreach ($order_payments as $order_payment) {
+					$order_payment->transaction_id = $transaction->getId();
+
+					if ($transaction->getPaymentMethod() == "credit_card") {
+
+						$card = $transaction->getCard();
+						$order_payment->card_number = $card->getFirstDigits() . '****' . $card->getLastDigits();
+						$order_payment->card_brand 	= $card->getBrand();
+						$order_payment->card_holder = $card->getHolderName();
+						$order_payment->installments = $transaction->getInstallments();
+					}
+
+					$order_payment->save();
+				}
+			}
+
 			Pagarmeps::addLog('11-Confirm-final Transaction.Status='.$transaction->status, 1, 'info', 'Pagarme', $order_id);
 			$statusId = Pagarmeps::getStatusId($transaction->status);
 			Pagarmeps::addLog('11a-Confirm-final statusId='.$statusId, 1, 'info', 'Pagarme', $order_id);
@@ -265,6 +326,8 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			$authorized_status_id = Configuration::get('PAGARME_DEFAULT_AUTHORIZED');
 			$paid_status_id = Configuration::get('PAGARME_DEFAULT_PAID');
 			Pagarmeps::addLog('11e-Confirm-final authorized_status_id='.$authorized_status_id.' | paid_status_id='.$paid_status_id, 1, 'info', 'Pagarme', $order_id);
+
+			
 			if(!$order->hasInvoice() && ($statusId == $authorized_status_id || $statusId == $paid_status_id)){
 				Pagarmeps::addLog('11f-Confirm-final statusId='.$statusId, 1, 'info', 'Pagarme', $order_id);
 				$order->setInvoice(true);
@@ -328,6 +391,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			 * The order has been placed so we redirect the customer on the confirmation page.
 			 */
 			$module_id = $this->module->id;
+			
 			return Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key);
 		}
 		else
@@ -340,5 +404,54 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			$this->errors[] = $this->module->l('An error occured. Please contact the merchant to have more informations');
 			return $this->setTemplate('error.tpl');
 		}
+	}
+
+	private function createDiscountAmount()
+	{
+		if (!Configuration::get('PAGARME_DISCOUNT_BOLETO')) {
+			return $this;
+		}
+
+		foreach ($this->context->cart->getCartRules() as $cart_rule) {
+			if ($cart_rule['code'] == 'discount_boleto') {
+				return $this;
+			}
+		}
+
+		$cart_rule = new CartRule();
+
+		$cart_rule->name = array("Desconto Boleto","Desconto Boleto");
+		$cart_rule->id_customer = $this->context->cart->id_customer;
+		$cart_rule->date_from = date('Y-m-d H:i:s');
+		$cart_rule->date_to = date('Y-m-d H:i:s', strtotime("+2 days",strtotime(date('Y-m-d'))));
+		$cart_rule->description = 'descrição';
+		$cart_rule->quantity = 1;
+		$cart_rule->quantity_per_user = 1;
+		$cart_rule->priority = 1;
+		$cart_rule->partial_use = 1;
+		$cart_rule->code = md5('discount_boleto' .$this->context->cart->id_customer . date('Y-m-d H:i:s'));
+		$cart_rule->minimum_amount = 0;
+		$cart_rule->minimum_amount_tax = 0;
+		$cart_rule->minimum_amount_currency = 1;
+		$cart_rule->minimum_amount_shipping = 0;
+		$cart_rule->country_restriction = 0;
+		$cart_rule->carrier_restriction = 0;
+		$cart_rule->group_restriction = 0;
+		$cart_rule->cart_rule_restriction = 0;
+		$cart_rule->product_restriction = 0;
+		$cart_rule->shop_restriction = 0;
+		$cart_rule->free_shipping = 0;
+		$cart_rule->reduction_percent = Configuration::get('PAGARME_DISCOUNT_BOLETO');
+		$cart_rule->reduction_tax = 1;
+		$cart_rule->reduction_currency = 1;
+		$cart_rule->reduction_product = 0;
+		$cart_rule->gift_product = 0;
+		$cart_rule->gift_product_attribute = 0;
+		$cart_rule->highlight = 0;
+		$cart_rule->active = 1;
+
+		$cart_rule->add();
+		$this->context->cart->addCartRule($cart_rule->id);
+		$this->context->cart->save();
 	}
 }

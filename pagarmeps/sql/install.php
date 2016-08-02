@@ -42,6 +42,8 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'pagarme_card` (
     PRIMARY KEY  (`id_pagarme_card`)
 ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8;';
 
+$sql[] = 'alter table ps_order_payment add column installments int default NULL;';
+
 foreach ($sql as $query)
 	if (Db::getInstance()->execute($query) == false)
 		return false;
