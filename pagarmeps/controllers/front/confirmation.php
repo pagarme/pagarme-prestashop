@@ -233,6 +233,8 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						$paymentMethodName = 'Boleto';
 					}
 
+					$pagarme_status = Configuration::get('PAGARME_DEFAULT_STATUS');
+
 					$this->module->validateOrder(
 						$this->context->cart->id,
 						$payment_status,
@@ -327,7 +329,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			$paid_status_id = Configuration::get('PAGARME_DEFAULT_PAID');
 			Pagarmeps::addLog('11e-Confirm-final authorized_status_id='.$authorized_status_id.' | paid_status_id='.$paid_status_id, 1, 'info', 'Pagarme', $order_id);
 
-			
+
 			if(!$order->hasInvoice() && ($statusId == $authorized_status_id || $statusId == $paid_status_id)){
 				Pagarmeps::addLog('11f-Confirm-final statusId='.$statusId, 1, 'info', 'Pagarme', $order_id);
 				$order->setInvoice(true);
@@ -391,7 +393,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			 * The order has been placed so we redirect the customer on the confirmation page.
 			 */
 			$module_id = $this->module->id;
-			
+
 			return Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key);
 		}
 		else
@@ -413,6 +415,8 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		}
 
 		foreach ($this->context->cart->getCartRules() as $cart_rule) {
+
+			var_dump($cart_rule); die;
 			if ($cart_rule['code'] == 'discount_boleto') {
 				return $this;
 			}

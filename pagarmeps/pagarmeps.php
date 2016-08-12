@@ -33,10 +33,9 @@ class Pagarmeps extends PaymentModule
 	protected $config_form = false;
 
 	private function loader($className) {
-		//echo 'Trying to load ', $className, ' via ', __METHOD__, "()\n";
+
 		if(strrpos($className, 'PagarMe_') !== false) {
 			$className = Tools::substr($className, 8);
-			//echo 'Trying to load V2 ', $className, ' via ', __METHOD__, "()\n";
 			include dirname(__FILE__).'/lib/pagarme/'.$className . '.php';
 		}else if(strrpos($className, 'Pagarmeps') !== false) {
 			include dirname(__FILE__).'/classes/'.$className . '.php';

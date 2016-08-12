@@ -33,7 +33,7 @@ class OrderPayment extends OrderPaymentCore
             'card_expiration' =>     array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
             'card_holder' =>         array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
             'date_add' =>            array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
-            'installments' =>        array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254)
-        ),
+            'installments' =>        array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
+        )
     );
 }

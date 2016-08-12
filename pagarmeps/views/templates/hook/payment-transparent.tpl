@@ -60,6 +60,7 @@
 					data-max-installments="{$max_installments|escape:'htmlall':'UTF-8'}"
 					data-interest-rate="{$interest_rate|escape:'htmlall':'UTF-8'}"
 					data-free-installments="{$free_installments|escape:'htmlall':'UTF-8'}"
+					data-boleto-discount-amount="{$boleto_discount_amount|escape:'htmlall':'UTF-8'}"
 			>
 			</script>
 		</form>
