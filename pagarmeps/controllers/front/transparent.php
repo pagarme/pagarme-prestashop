@@ -97,7 +97,7 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 
 		$cart = $this->context->cart;
 		$shippingAmount = $cart->getOrderTotal($useTax, Cart::ONLY_SHIPPING, null, $cart->id_carrier, false);
-
+        
 		$totalAmount = $cart->getOrderTotal();
 		$totalAmountFreeShipping = $totalAmount - $shippingAmount;
 

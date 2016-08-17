@@ -221,6 +221,8 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						$this->createDiscountAmount();
 					}
 
+					//	var_dump($this->context->cart->getOrderTotal()); die;
+
 					$transaction->captureAdv($this->context->cart->getOrderTotal()*100, array());
 					$ct_payment_method = $transaction->payment_method;
 
@@ -415,9 +417,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		}
 
 		foreach ($this->context->cart->getCartRules() as $cart_rule) {
-
-			var_dump($cart_rule); die;
-			if ($cart_rule['code'] == 'discount_boleto') {
+			if ($cart_rule['description'] == 'discount_boleto') {
 				return $this;
 			}
 		}
@@ -428,7 +428,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		$cart_rule->id_customer = $this->context->cart->id_customer;
 		$cart_rule->date_from = date('Y-m-d H:i:s');
 		$cart_rule->date_to = date('Y-m-d H:i:s', strtotime("+2 days",strtotime(date('Y-m-d'))));
-		$cart_rule->description = 'descrição';
+		$cart_rule->description = 'discount_boleto';
 		$cart_rule->quantity = 1;
 		$cart_rule->quantity_per_user = 1;
 		$cart_rule->priority = 1;
@@ -445,7 +445,8 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		$cart_rule->product_restriction = 0;
 		$cart_rule->shop_restriction = 0;
 		$cart_rule->free_shipping = 0;
-		$cart_rule->reduction_percent = Configuration::get('PAGARME_DISCOUNT_BOLETO');
+		#$cart_rule->reduction_percent = Configuration::get('PAGARME_DISCOUNT_BOLETO');
+		$cart_rule->reduction_amount = $this->calculateBoletoDiscountAmount();
 		$cart_rule->reduction_tax = 1;
 		$cart_rule->reduction_currency = 1;
 		$cart_rule->reduction_product = 0;
@@ -457,5 +458,20 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		$cart_rule->add();
 		$this->context->cart->addCartRule($cart_rule->id);
 		$this->context->cart->save();
+	}
+
+	protected function calculateBoletoDiscountAmount()
+	{
+		$taxCalculationMethod = Group::getPriceDisplayMethod((int)Group::getCurrent()->id);
+		$useTax = !($taxCalculationMethod == PS_TAX_EXC);
+
+		$cart = $this->context->cart;
+		$shippingAmount = $cart->getOrderTotal($useTax, Cart::ONLY_SHIPPING, null, $cart->id_carrier, false);
+
+		$totalAmount = $cart->getOrderTotal();
+		$totalAmountFreeShipping = $totalAmount - $shippingAmount;
+		
+		$discountAmount = (Configuration::get('PAGARME_DISCOUNT_BOLETO') / 100) * $totalAmountFreeShipping;
+		return number_format($discountAmount, '2', '.', '');
 	}
 }
