@@ -117,6 +117,9 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 				$address = new Address((int)$cart->id_address_invoice);
 				$phone = empty($address->phone)?$address->phone_mobile:$address->phone;
 				$ddd = '';
+				var_dump(!empty($address->phone));
+				var_dump(Tools::strlen($phone) > 2);
+				die();
 				if(!empty($address->phone) && Tools::strlen($phone) > 2) {
 					$ddd = Tools::substr($phone, 0, 2);
 					$phone = Tools::substr($phone, 2, Tools::strlen($phone));

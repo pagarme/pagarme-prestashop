@@ -27,10 +27,10 @@
 * to avoid any conflicts with others containers.
 */
 $(document).ready(function(){
-	$('#pagarme_payment_form #card_number').mask('0000-0000-0000-0000');
-	$('#pagarme_payment_form #card_expiration_month').mask('00');
-	$('#pagarme_payment_form #card_expiration_year').mask('0000');
-	$('#pagarme_payment_form #card_cvv').mask('000');
+	$('#pagarme_payment_form #card_number').maskPg('0000-0000-0000-0000');
+	$('#pagarme_payment_form #card_expiration_month').maskPg('00');
+	$('#pagarme_payment_form #card_expiration_year').maskPg('0000');
+	$('#pagarme_payment_form #card_cvv').maskPg('000');
   
 	PagarMe.encryption_key = encryption_key;
 
