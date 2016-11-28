@@ -114,16 +114,14 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			try {
 				//Customer informations
 				$customer = new Customer((int)$cart->id_customer);
-				$address = new Address((int)$cart->id_address_invoice);
-				$phone = empty($address->phone)?$address->phone_mobile:$address->phone;
-				$ddd = '';
-				var_dump(!empty($address->phone));
-				var_dump(Tools::strlen($phone) > 2);
-				die();
-				if(!empty($address->phone) && Tools::strlen($phone) > 2) {
-					$ddd = Tools::substr($phone, 0, 2);
-					$phone = Tools::substr($phone, 2, Tools::strlen($phone));
-				}
+                $address = new Address((int)$cart->id_address_invoice);
+                $phone = empty($address->phone)?$address->phone_mobile:$address->phone;
+                $phone = preg_replace('/\D/', '', $phone);
+                $ddd = '';
+                if(!empty($phone) && Tools::strlen($phone) > 2) {
+                        $ddd = Tools::substr($phone, 0, 2);
+                        $phone = Tools::substr($phone, 2, Tools::strlen($phone));
+                }
 				if($integrationMode == 'gateway') {
 					if ($payment_way == 'card' && !empty($card_hash)) {
 
@@ -136,28 +134,36 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						}
 
 						$transaction = new PagarMe_Transaction(array(
-							'amount' => $cart->getOrderTotal()*100,
+							'capture'      => true,
+							'async'        => false,
+							'amount'       => $cart->getOrderTotal()*100,
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
-							'card_hash' => $card_hash,
+							'card_hash'    => $card_hash,
 							'installments' => $installment,
-							'customer' => array(
-								'name' => $customer->firstname.' '.$customer->lastname,
-								'document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
-								'email' => $customer->email,
-								'address' => array(
-									'street' => $address->address1,
-									'neighborhood' => $address->address2,
-									'zipcode' => $address->postcode,
-									'street_number' => $this->getAddressNumber($address),
-									'complementary' => $address->other
+							'customer'     => array(
+									'name'            => $customer->firstname.' '.$customer->lastname,
+									'document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
+									'email'           => $customer->email,
+									'address'         => array(
+										'street'        => $address->address1,
+										'neighborhood'  => $address->address2,
+										'zipcode'       => $address->postcode,
+										'street_number' => $this->getAddressNumber($address),
+										'complementary' => $address->other
 								),
 								'phone' => array(
-									'ddd' => $ddd,
+									'ddd'    => $ddd,
 									'number' => $phone
 								)
 							)
 						));
 						$transaction->charge();
+
+						if ($transaction->getStatus() === 'refused') {
+							throw new PagarMe_Exception(
+								'Houve um problema ao processar o pagamento'
+							);
+						}
 
 						$card = $transaction->getCard();
 						$cardInfo = '<strong> Bandeira : </strong>' . $card->getBrand() . '<strong> Parcelas : </strong>' . $transaction->getInstallments();
