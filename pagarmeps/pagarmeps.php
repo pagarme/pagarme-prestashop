@@ -113,6 +113,7 @@ class Pagarmeps extends PaymentModule
 		$this->registerHook('backOfficeHeader') &&
 		$this->registerHook('payment') &&
 		$this->registerHook('paymentReturn') &&
+		$this->registerHook('displayOrderDetail') &&
 		$this->registerHook('actionPaymentCCAdd') &&
 		$this->registerHook('actionPaymentConfirmation') &&
 		$this->registerHook('displayHeader') &&
@@ -745,7 +746,7 @@ class Pagarmeps extends PaymentModule
 
 	/**
 	 * Add the CSS & JavaScript files you want to be loaded in the BO.
-	 */
+	 **/
 	public function hookBackOfficeHeader()
 	{
 		if (Tools::getValue('module_name') == $this->name)
@@ -1173,4 +1174,31 @@ class Pagarmeps extends PaymentModule
 		}
 		return $maskared;
 	}
+
+
+    public function hookDisplayOrderDetail($params)
+    {
+		$order = $params['order'];
+		$boletoUrl = null;
+		$order_status = new OrderState($order->getCurrentState(), (int)$order->id_lang);
+
+		if ($order->module == 'pagarmeps' && $order_status->paid == 0) {
+			$api_key = Configuration::get('PAGARME_API_KEY');
+			Pagarme::setApiKey($api_key);
+			$transactionId = PagarmepsTransactionClass::getTransactionIdByOrderId($order->id);
+			$transaction = PagarMe_Transaction::findById($transactionId);
+
+			if ($transaction->payment_method == 'boleto') {
+				$boletoUrl = $transaction->boleto_url;
+			}
+		}
+
+		$this->context->smarty->assign(
+			array(
+				'boleto_url' => $boletoUrl,
+			)
+		);
+
+		return $return.$this->display(__FILE__, 'views/templates/hook/boleto_detail.tpl');
+    }
 }
