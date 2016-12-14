@@ -28,10 +28,15 @@
 */
 $(document).ready(function(){
 	$('#pagarme_payment_form #card_number').maskPg('0000-0000-0000-0099');
-	$('#pagarme_payment_form #card_expiration_month').maskPg('00');
-	$('#pagarme_payment_form #card_expiration_year').maskPg('0000');
+	var expirationMonth = $('#pagarme_payment_form #card_expiration_month');
+	var expirationYear = $('#pagarme_payment_form #card_expiration_year');
+
+	if (expirationMonth.is('input') && expirationYear.is('input')) {
+		expirationMonth.maskPg('00');
+		expirationYear.maskPg('0000');
+	}
 	$('#pagarme_payment_form #card_cvv').maskPg('0009');
-  
+
 	PagarMe.encryption_key = encryption_key;
 
     var form = $('#pagarme_payment_form');

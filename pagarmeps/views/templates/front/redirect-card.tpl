@@ -65,9 +65,11 @@
 				<div class="column col-xs-12 col-sm-6 col-md-4">
 					<label for="card_expiration_month" >{l s='Month / Year of experation' mod='pagarmeps'}</label>
 				</div>
-				<div class="column col-xs-12 col-sm-6 col-md-4">
-					<input size="4" type="text" id="card_expiration_month" name="card_expiration_month"/> / <input size="4" type="text" id="card_expiration_year" name="card_expiration_year"/>
-				</div>
+				{if $show_combo == true}
+					{include file="./combo-expiration.tpl"}
+				{else}
+					{include file="./input-expiration.tpl"}
+				{/if}
 				<div class="clear"></div>
 			</div>
 			<div class="form-item">
