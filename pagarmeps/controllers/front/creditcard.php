@@ -109,7 +109,7 @@ class PagarmepsCreditcardModuleFrontController extends ModuleFrontController
 		$years = [];
 		$date = new \DateTime('now');
 		$years[] = $date->format('y');
-		for ($i=0; $i < 20; $i++) {
+		for ($i=0; $i < 10; $i++) {
 			$date->add(new \DateInterval('P1Y'));
 			$years[] = $date->format('y');
 		}
