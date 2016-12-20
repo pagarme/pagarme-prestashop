@@ -50,13 +50,10 @@ $(document).ready(function(){
 
 function validateForm() {
 	var form = $('#pagarme_payment_form');
-	var payement_way = null;
-	if(pay_way == 'both') {
-		payement_way = $('#pagarme_payment_form input[name=payment_way]').val();
-	}
-	
+	var payment_way = $('#pagarme_payment_form input[name=payment_way]').val();
+
 	//Only for credit card selection
-	if(payement_way == 'card') {
+	if(payment_way == 'card') {
 		var creditCard = new PagarMe.creditCard();
 		creditCard.cardHolderName = $('#pagarme_payment_form #card_holder_name').val();
 		creditCard.cardExpirationMonth = $('#pagarme_payment_form #card_expiration_month').val();
@@ -108,7 +105,7 @@ function validateForm() {
 	}
 	
 	//for Boleto payment
-	if(payement_way == 'boleto') {
+	if(payment_way == 'boleto') {
 		form.get(0).submit();
 	}
 	return false;
