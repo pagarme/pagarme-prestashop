@@ -57,6 +57,7 @@
 					data-customer-address-zipcode="{$address_zipcode|escape:'htmlall':'UTF-8'}"
 					data-customer-phone-ddd="{$phone_ddd|escape:'htmlall':'UTF-8'}"
 					data-customer-phone-number="{$phone_number|escape:'htmlall':'UTF-8'}"
+					data-customer-data="false"
 					data-max-installments="{$max_installments|escape:'htmlall':'UTF-8'}"
 					data-interest-rate="{$interest_rate|escape:'htmlall':'UTF-8'}"
 					data-free-installments="{$free_installments|escape:'htmlall':'UTF-8'}"
