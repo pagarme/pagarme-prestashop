@@ -48,7 +48,7 @@ class Pagarmeps extends PaymentModule
 	{
 		$this->name = 'pagarmeps';
 		$this->tab = 'payments_gateways';
-		$this->version = '1.0.3';
+		$this->version = '1.1.0';
 		$this->author = 'Pagar.me';
 		$this->need_instance = 0;
 
@@ -96,6 +96,7 @@ class Pagarmeps extends PaymentModule
 
 		Configuration::updateValue('PAGARME_LIVE_MODE', false);
 		Configuration::updateValue('PAGARME_ACTIVATE_LOG', false);
+		Configuration::updateValue('PAGARME_EXPIRATION_COMBO', false);
 
 		//Shop name for Soft Descriptor
 		$shop_name = Configuration::get('PS_SHOP_NAME');
@@ -161,6 +162,7 @@ class Pagarmeps extends PaymentModule
 		Configuration::deleteByName('PAGARME_ENCRYPTION_KEY');
 		Configuration::deleteByName('PAGARME_PAY_WAY');
 		Configuration::deleteByName('PAGARME_ONE_CLICK_BUY');
+		Configuration::deleteByName('PAGARME_EXPIRATION_COMBO');
 
 		return parent::uninstall();
 	}
@@ -701,6 +703,24 @@ class Pagarmeps extends PaymentModule
 							)
 						),
 					),
+					array(
+						'type' => 'switch',
+						'label' => $this->l('Apresentar lista para data de expiração'),
+						'name' => 'PAGARME_EXPIRATION_COMBO',
+						'is_bool' => true,
+						'values' => array(
+							array(
+								'id' => 'active_on',
+								'value' => true,
+								'label' => $this->l('Enabled')
+							),
+							array(
+								'id' => 'active_off',
+								'value' => false,
+								'label' => $this->l('Disabled')
+							)
+						),
+					),
 				),
 				'submit' => array(
 					'title' => $this->l('Save'),
@@ -729,7 +749,8 @@ class Pagarmeps extends PaymentModule
 			'PAGARME_INSTALLMENT_TAX_FREE' => Configuration::get('PAGARME_INSTALLMENT_TAX_FREE'),
 			'PAGARME_INSTALLMENT_TAX' => Configuration::get('PAGARME_INSTALLMENT_TAX'),
 			'PAGARME_ACTIVATE_LOG' => Configuration::get('PAGARME_ACTIVATE_LOG'),
-			'PAGARME_DISCOUNT_BOLETO' => Configuration::get('PAGARME_DISCOUNT_BOLETO')
+			'PAGARME_DISCOUNT_BOLETO' => Configuration::get('PAGARME_DISCOUNT_BOLETO'),
+			'PAGARME_EXPIRATION_COMBO' => Configuration::get('PAGARME_EXPIRATION_COMBO'),
 		);
 	}
 

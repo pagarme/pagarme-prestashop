@@ -2,7 +2,7 @@
 <module>
 	<name>pagarmeps</name>
 	<displayName><![CDATA[Pagar.Me]]></displayName>
-	<version><![CDATA[1.0.3]]></version>
+	<version><![CDATA[1.1.0]]></version>
 	<description><![CDATA[O Pagar.me aprova 92 a cada 100 tentativas de pagamento para aumentar sua receita com convers&atilde;o de gateway e facilidade de PSP.]]></description>
 	<author><![CDATA[Pagar.me]]></author>
 	<tab><![CDATA[payments_gateways]]></tab>

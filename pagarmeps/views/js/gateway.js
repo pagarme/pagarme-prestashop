@@ -28,10 +28,15 @@
 */
 $(document).ready(function(){
 	$('#pagarme_payment_form #card_number').maskPg('0000-0000-0000-0099');
-	$('#pagarme_payment_form #card_expiration_month').maskPg('00');
-	$('#pagarme_payment_form #card_expiration_year').maskPg('0000');
+	var expirationMonth = $('#pagarme_payment_form #card_expiration_month');
+	var expirationYear = $('#pagarme_payment_form #card_expiration_year');
+
+	if (expirationMonth.is('input') && expirationYear.is('input')) {
+		expirationMonth.maskPg('00');
+		expirationYear.maskPg('0000');
+	}
 	$('#pagarme_payment_form #card_cvv').maskPg('0009');
-  
+
 	PagarMe.encryption_key = encryption_key;
 
     var form = $('#pagarme_payment_form');
@@ -45,13 +50,10 @@ $(document).ready(function(){
 
 function validateForm() {
 	var form = $('#pagarme_payment_form');
-	var payement_way = null;
-	if(pay_way == 'both') {
-		payement_way = $('#pagarme_payment_form input[name=payment_way]').val();
-	}
-	
+	var payment_way = $('#pagarme_payment_form input[name=payment_way]').val();
+
 	//Only for credit card selection
-	if(payement_way == 'card') {
+	if(payment_way == 'card') {
 		var creditCard = new PagarMe.creditCard();
 		creditCard.cardHolderName = $('#pagarme_payment_form #card_holder_name').val();
 		creditCard.cardExpirationMonth = $('#pagarme_payment_form #card_expiration_month').val();
@@ -103,7 +105,7 @@ function validateForm() {
 	}
 	
 	//for Boleto payment
-	if(payement_way == 'boleto') {
+	if(payment_way == 'boleto') {
 		form.get(0).submit();
 	}
 	return false;

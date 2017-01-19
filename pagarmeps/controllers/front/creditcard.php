@@ -63,7 +63,14 @@ class PagarmepsCreditcardModuleFrontController extends ModuleFrontController
 				'pay_way' => $pay_way,
 				'integration_mode' => $integration_mode,
 				'secure_key' => Context::getContext()->customer->secure_key,
+				'show_combo' => Configuration::get('PAGARME_EXPIRATION_COMBO'),
 			));
+
+			if (Configuration::get('PAGARME_EXPIRATION_COMBO')) {
+				$this->context->smarty->assign(array(
+					'expiration_years' => $this->getExpirationYears()
+				));
+			}
 
 			return $this->setTemplate('redirect-card.tpl');
 		}
@@ -97,4 +104,16 @@ class PagarmepsCreditcardModuleFrontController extends ModuleFrontController
 		));
 	}
 
+	protected function getExpirationYears()
+	{
+		$years = [];
+		$date = new \DateTime('now');
+		$years[] = $date->format('y');
+		for ($i=0; $i < 10; $i++) {
+			$date->add(new \DateInterval('P1Y'));
+			$years[] = $date->format('y');
+		}
+
+		return $years;
+	}
 }
