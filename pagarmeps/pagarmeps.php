@@ -551,7 +551,7 @@ class Pagarmeps extends PaymentModule
 					),
 					array(
 						'type' => 'switch',
-						'label' => $this->l('Confirm customer data in Checkout Pagar.me'),
+						'label' => $this->l('Confirmar dados do comprador no checkout Pagar.me'),
 						'name' => 'PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME',
 						'is_bool' => true,
 						'values' => array(
