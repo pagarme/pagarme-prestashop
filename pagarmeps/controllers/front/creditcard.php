@@ -22,7 +22,7 @@
 *  @copyright 2015 Pagar.me
 *  @version   1.0.0
 *  @link      https://pagar.me/
-*  @license    
+*  @license
 */
 
 class PagarmepsCreditcardModuleFrontController extends ModuleFrontController
@@ -43,22 +43,24 @@ class PagarmepsCreditcardModuleFrontController extends ModuleFrontController
 			$total_order = $cart->getOrderTotal();
 			$installment = Pagarmeps::getInstallmentOptions($total_order);
 			$installment_tax_free = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+			$confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME');
 			$pay_way = Configuration::get('PAGARME_PAY_WAY');
 			$integration_mode = Configuration::get('PAGARME_INTEGRATION_MODE');
 			$encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
-			
+
 			if(empty($encryption_key)){
 				return $this->displayError('An error occurred, missing configuration for the Pagar.me Module');
 			}
 			if($integration_mode != 'gateway' && !($pay_way == 'credit_card' || $pay_way == 'both')){
 				return $this->displayError('This payment mode is not activated, please contact the administrator of this site');
 			}
-			
+
 			$this->context->smarty->assign(array(
 				'cart_id' => $cart->id,
 				'total_order' => $total_order,
 				'installment' => $installment,
-				'installment_tax_free' => $installment_tax_free,
+                'installment_tax_free' => $installment_tax_free,
+                'confirm_customer_data' => $confirm_customer_data,
 				'encryption_key' => $encryption_key,
 				'pay_way' => $pay_way,
 				'integration_mode' => $integration_mode,
@@ -92,7 +94,7 @@ class PagarmepsCreditcardModuleFrontController extends ModuleFrontController
 
 		return $this->setTemplate('error.tpl');
 	}
-	
+
 		/**
 	* Set default medias for this controller
 	*/

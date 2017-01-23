@@ -45,6 +45,7 @@
 					data-amount="{$total_order * 100|escape:'htmlall':'UTF-8'}"
 					data-payment-methods="{$paymentMethods|escape:'htmlall':'UTF-8'}"
 					data-postback-url="{$link->getModuleLink('pagarmeps', 'postbacktransparent', [], true)|escape:'htmlall':'UTF-8'}"
+					data-customer-data="{$confirm_customer_data|escape:'htmlall':'UTF-8'}"
 					data-customer-document-number="{$customer_document_number|escape:'htmlall':'UTF-8'}"
 					data-customer-name="{$customer_name|escape:'htmlall':'UTF-8'}"
 					data-customer-email="{$customer_email|escape:'htmlall':'UTF-8'}"

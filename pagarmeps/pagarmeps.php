@@ -48,7 +48,7 @@ class Pagarmeps extends PaymentModule
 	{
 		$this->name = 'pagarmeps';
 		$this->tab = 'payments_gateways';
-		$this->version = '1.1.0';
+		$this->version = '1.2.0';
 		$this->author = 'Pagar.me';
 		$this->need_instance = 0;
 
@@ -96,6 +96,7 @@ class Pagarmeps extends PaymentModule
 
 		Configuration::updateValue('PAGARME_LIVE_MODE', false);
 		Configuration::updateValue('PAGARME_ACTIVATE_LOG', false);
+		Configuration::updateValue('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME', true);
 		Configuration::updateValue('PAGARME_EXPIRATION_COMBO', false);
 
 		//Shop name for Soft Descriptor
@@ -162,6 +163,7 @@ class Pagarmeps extends PaymentModule
 		Configuration::deleteByName('PAGARME_ENCRYPTION_KEY');
 		Configuration::deleteByName('PAGARME_PAY_WAY');
 		Configuration::deleteByName('PAGARME_ONE_CLICK_BUY');
+		Configuration::deleteByName('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME');
 		Configuration::deleteByName('PAGARME_EXPIRATION_COMBO');
 
 		return parent::uninstall();
@@ -549,6 +551,24 @@ class Pagarmeps extends PaymentModule
 					),
 					array(
 						'type' => 'switch',
+						'label' => $this->l('Confirm customer data in Checkout Pagar.me'),
+						'name' => 'PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME',
+						'is_bool' => true,
+						'values' => array(
+							array(
+								'id' => 'active_on',
+								'value' => true,
+								'label' => $this->l('Enabled')
+							),
+							array(
+								'id' => 'active_off',
+								'value' => false,
+								'label' => $this->l('Disabled')
+							)
+						),
+					),
+					array(
+						'type' => 'switch',
 						'label' => $this->l('Allow installment'),
 						'name' => 'PAGARME_INSTALLMENT',
 						'is_bool' => true,
@@ -741,6 +761,7 @@ class Pagarmeps extends PaymentModule
 			'PAGARME_ENCRYPTION_KEY' => Configuration::get('PAGARME_ENCRYPTION_KEY'),
 			'PAGARME_PAY_WAY' => Configuration::get('PAGARME_PAY_WAY'),
 			'PAGARME_ONE_CLICK_BUY' => Configuration::get('PAGARME_ONE_CLICK_BUY'),
+		    'PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME' => Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME'),
 			'PAGARME_INSTALLMENT' => Configuration::get('PAGARME_INSTALLMENT'),
 			'PAGARME_INSTALLMENT_MIN_VALUE' => Configuration::get('PAGARME_INSTALLMENT_MIN_VALUE'),
 			'PAGARME_INSTALLMENT_MAX_NUMBER' => Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER'),
@@ -817,6 +838,8 @@ class Pagarmeps extends PaymentModule
 
 			$cart = Context::getContext()->cart;
 
+            $confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME') == 1 ? "true" : "false";
+
 			$total_order = $cart->getOrderTotal();
 			$customer = new Customer((int)$cart->id_customer);
 			$address = new Address((int)$cart->id_address_invoice);
@@ -878,6 +901,7 @@ class Pagarmeps extends PaymentModule
 				'pay_way' => $payWay,
 				'integration_mode' => $integrationMode,
 				'secure_key' => Context::getContext()->customer->secure_key,
+                'confirm_customer_data' => $confirm_customer_data,
 				'customer_name' => $customer->firstname.' '.$customer->lastname,
 				'customer_email' => $customer->email,
 				'address_street' => $address->address1,
