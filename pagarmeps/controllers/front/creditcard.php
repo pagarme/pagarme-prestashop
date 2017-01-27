@@ -27,95 +27,95 @@
 
 class PagarmepsCreditcardModuleFrontController extends ModuleFrontController
 {
-	/**
-	 * Do whatever you have to before redirecting the customer on the website of your payment processor.
-	 */
-	public function postProcess()
-	{
-		/**
-		 * Oops, an error occured.
-		 */
-		if (Tools::getValue('action') == 'error')
-			return $this->displayError('An error occurred while trying to redirect the customer');
-		else
-		{
-			$cart = Context::getContext()->cart;
-			$total_order = $cart->getOrderTotal();
-			$installment = Pagarmeps::getInstallmentOptions($total_order);
-			$installment_tax_free = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
-			$confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME');
-			$pay_way = Configuration::get('PAGARME_PAY_WAY');
-			$integration_mode = Configuration::get('PAGARME_INTEGRATION_MODE');
-			$encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
+    /**
+     * Do whatever you have to before redirecting the customer on the website of your payment processor.
+     */
+    public function postProcess()
+    {
+        /**
+         * Oops, an error occured.
+         */
+        if (Tools::getValue('action') == 'error') {
+            return $this->displayError('An error occurred while trying to redirect the customer');
+        } else {
+            $cart = Context::getContext()->cart;
+            $total_order = $cart->getOrderTotal();
+            $installment = Pagarmeps::getInstallmentOptions($total_order);
+            $installment_tax_free = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+            $confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME');
+            $pay_way = Configuration::get('PAGARME_PAY_WAY');
+            $integration_mode = Configuration::get('PAGARME_INTEGRATION_MODE');
+            $encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
 
-			if(empty($encryption_key)){
-				return $this->displayError('An error occurred, missing configuration for the Pagar.me Module');
-			}
-			if($integration_mode != 'gateway' && !($pay_way == 'credit_card' || $pay_way == 'both')){
-				return $this->displayError('This payment mode is not activated, please contact the administrator of this site');
-			}
+            if (empty($encryption_key)) {
+                return $this->displayError('An error occurred, missing configuration for the Pagar.me Module');
+            }
+            if ($integration_mode != 'gateway' && !($pay_way == 'credit_card' || $pay_way == 'both')) {
+                return $this->displayError('This payment mode is not activated, please contact the administrator of this site');
+            }
 
-			$this->context->smarty->assign(array(
-				'cart_id' => $cart->id,
-				'total_order' => $total_order,
-				'installment' => $installment,
-                'installment_tax_free' => $installment_tax_free,
-                'confirm_customer_data' => $confirm_customer_data,
-				'encryption_key' => $encryption_key,
-				'pay_way' => $pay_way,
-				'integration_mode' => $integration_mode,
-				'secure_key' => Context::getContext()->customer->secure_key,
-				'show_combo' => Configuration::get('PAGARME_EXPIRATION_COMBO'),
-			));
+            $this->context->smarty->assign(array(
+                'cart_id' => $cart->id,
+                'total_order' => $total_order,
+                'installment' => $installment,
+                                'installment_tax_free' => $installment_tax_free,
+                                'confirm_customer_data' => $confirm_customer_data,
+                'encryption_key' => $encryption_key,
+                'pay_way' => $pay_way,
+                'integration_mode' => $integration_mode,
+                'secure_key' => Context::getContext()->customer->secure_key,
+                'show_combo' => Configuration::get('PAGARME_EXPIRATION_COMBO'),
+            ));
 
-			if (Configuration::get('PAGARME_EXPIRATION_COMBO')) {
-				$this->context->smarty->assign(array(
-					'expiration_years' => $this->getExpirationYears()
-				));
-			}
+            if (Configuration::get('PAGARME_EXPIRATION_COMBO')) {
+                $this->context->smarty->assign(array(
+                    'expiration_years' => $this->getExpirationYears()
+                ));
+            }
 
-			return $this->setTemplate('redirect-card.tpl');
-		}
-	}
+            return $this->setTemplate('redirect-card.tpl');
+        }
+    }
 
-	protected function displayError($message, $description = false)
-	{
-		/**
-		 * Create the breadcrumb for your ModuleFrontController.
-		 */
-		$this->context->smarty->assign('path', '
+    protected function displayError($message, $description = false)
+    {
+        /**
+         * Create the breadcrumb for your ModuleFrontController.
+         */
+        $this->context->smarty->assign('path', '
 			<a href="'.$this->context->link->getPageLink('order', null, null, 'step=3').'">'.$this->module->l('Payment').'</a>
 			<span class="navigation-pipe">&gt;</span>'.$this->module->l('Error'));
 
-		/**
-		 * Set error message and description for the template.
-		 */
-		array_push($this->errors, $this->module->l($message), $description);
+        /**
+         * Set error message and description for the template.
+         */
+        array_push($this->errors, $this->module->l($message), $description);
 
-		return $this->setTemplate('error.tpl');
-	}
+        return $this->setTemplate('error.tpl');
+    }
 
-		/**
-	* Set default medias for this controller
-	*/
-	public function setMedia(){
-		parent::setMedia();
-		$this->context->controller->addJS(array('https://assets.pagar.me/js/pagarme.min.js',
-		$this->module->getPath().'/views/js/jquery.mask.min.js',
-		$this->module->getPath().'/views/js/gateway.js',
-		));
-	}
+        /**
+    * Set default medias for this controller
+    */
+    public function setMedia()
+    {
+        parent::setMedia();
+        $this->context->controller->addJS(array('https://assets.pagar.me/js/pagarme.min.js',
+        $this->module->getPath().'/views/js/jquery.mask.min.js',
+        $this->module->getPath().'/views/js/gateway.js',
+        ));
+    }
 
-	protected function getExpirationYears()
-	{
-		$years = [];
-		$date = new \DateTime('now');
-		$years[] = $date->format('y');
-		for ($i=0; $i < 10; $i++) {
-			$date->add(new \DateInterval('P1Y'));
-			$years[] = $date->format('y');
-		}
+    protected function getExpirationYears()
+    {
+        $years = [];
+        $date = new \DateTime('now');
+        $years[] = $date->format('y');
+        for ($i=0; $i < 10; $i++) {
+            $date->add(new \DateInterval('P1Y'));
+            $years[] = $date->format('y');
+        }
 
-		return $years;
-	}
+        return $years;
+    }
 }
