@@ -22,7 +22,7 @@
 *  @copyright 2015 Pagar.me
 *  @version   1.0.0
 *  @link      https://pagar.me/
-*  @license  
+*  @license
 */
 
 class PagarmepsTransparentModuleFrontController extends ModuleFrontController
@@ -45,25 +45,25 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 			$integration_mode = Configuration::get('PAGARME_INTEGRATION_MODE');
 			$encryption_key = Configuration::get('PAGARME_ENCRYPTION_KEY');
 			$boletoDiscount = Configuration::get('PAGARME_DISCOUNT_BOLETO');
-			
+
 			if(empty($encryption_key)){
 				return $this->displayError('An error occurred, missing configuration for the Pagar.me Module');
 			}
 			if($integration_mode != 'checkout_transparente'){
 				return $this->displayError('This payment mode is not activated, please contact the administrator of this site');
 			}
-			
+
 			$customer = new Customer((int)$cart->id_customer);
 			$address = new Address((int)$cart->id_address_invoice);
 			$state = new State((int)$address->id_state);
-			
+
 			$phone = empty($address->phone)?$address->phone_mobile:$address->phone;
 			$ddd = '';
 			if(!empty($address->phone) && Tools::strlen($phone) > 2) {
 				$ddd = Tools::substr($phone, 0, 2);
 				$phone = Tools::substr($phone, 2, Tools::strlen($phone));
 			}
-			
+
 			$this->context->smarty->assign(array(
 				'cart_id' => $cart->id,
 				'total_order' => $total_order,
@@ -97,7 +97,7 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 
 		$cart = $this->context->cart;
 		$shippingAmount = $cart->getOrderTotal($useTax, Cart::ONLY_SHIPPING, null, $cart->id_carrier, false);
-        
+
 		$totalAmount = $cart->getOrderTotal();
 		$totalAmountFreeShipping = $totalAmount - $shippingAmount;
 
@@ -122,7 +122,7 @@ class PagarmepsTransparentModuleFrontController extends ModuleFrontController
 
 		return $this->setTemplate('error.tpl');
 	}
-	
+
 		/**
 	* Set default medias for this controller
 	*/
