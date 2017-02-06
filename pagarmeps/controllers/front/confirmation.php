@@ -232,7 +232,22 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 					//	var_dump($this->context->cart->getOrderTotal()); die;
 
-					$transaction->captureAdv($this->context->cart->getOrderTotal()*100, array());
+					$amount_to_capture = calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
+
+					$array_installments = $amount_to_capture['installments'];
+
+					$interest_rate_amount = 0;
+
+					foreach ($array_installments as $key) {
+						if($key['installment'] == $transaction->installments){
+
+							$interest_rate_Amount = $key['amount'];
+
+						}
+					}
+
+					$transaction->captureAdv($interest_rate_amount);
+
 					$ct_payment_method = $transaction->payment_method;
 
 					if ($transaction->getPaymentMethod() == 'credit_card') {
@@ -482,5 +497,18 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		
 		$discountAmount = (Configuration::get('PAGARME_DISCOUNT_BOLETO') / 100) * $totalAmountFreeShipping;
 		return number_format($discountAmount, '2', '.', '');
+	}
+
+	private function calculateInstallmentsForOrder($amount){
+
+		$interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
+
+		$max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
+
+		$free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+
+		$response = $transaction::calculateInstallmentsAmount($amount,$interest_rate,$max_installments,$free_installments);
+
+		return $response;
 	}
 }
