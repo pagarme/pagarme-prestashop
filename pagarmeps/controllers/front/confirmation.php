@@ -232,7 +232,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 					//	var_dump($this->context->cart->getOrderTotal()); die;
 
-					$amount_to_capture = calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
+					$amount_to_capture = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
 
 					$array_installments = $amount_to_capture['installments'];
 
