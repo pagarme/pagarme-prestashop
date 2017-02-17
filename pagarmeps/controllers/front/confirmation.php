@@ -507,7 +507,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 		$free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
 
-		$response = $transaction::calculateInstallmentsAmount($amount,$interest_rate,$max_installments,$free_installments);
+		$response = PagarMe_Transaction::calculateInstallmentsAmount($amount,$interest_rate,$max_installments,$free_installments);
 
 		return $response;
 	}
