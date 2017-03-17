@@ -127,16 +127,29 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 						$installment = 1;
 
+						$interest_rate_amount = 0;
+
 						if(Tools::isSubmit('installment') != false && (bool)Configuration::get('PAGARME_INSTALLMENT') === true){
-							$installment = Tools::getValue('installment');
-							$maxInstallments = Pagarmeps::getInstallmentMaxi($cart->getOrderTotal());
-							$installment = min($installment, $maxInstallments);
-						}
+
+							$amount_to_capture = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
+
+							$array_installments = $amount_to_capture['installments'];
+
+							foreach ($array_installments as $key) {
+			
+								if($key['installment'] == Tools::getValue('installment')){
+
+									$interest_rate_amount = $key['amount'];
+
+									break;
+
+								}
+							}
 
 						$transaction = new PagarMe_Transaction(array(
 							'capture'      => true,
 							'async'        => false,
-							'amount'       => $cart->getOrderTotal()*100,
+							'amount'       => $interest_rate_amount,
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 							'card_hash'    => $card_hash,
 							'installments' => $installment,
@@ -230,8 +243,6 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						$this->createDiscountAmount();
 					}
 
-					//	var_dump($this->context->cart->getOrderTotal()); die;
-
 					$amount_to_capture = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
 
 					$array_installments = $amount_to_capture['installments'];
@@ -241,7 +252,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 					foreach ($array_installments as $key) {
 						if($key['installment'] == $transaction->installments){
 
-							$interest_rate_Amount = $key['amount'];
+							$interest_rate_amount = $key['amount'];
 
 						}
 					}
@@ -276,9 +287,28 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 					);
 
 				} else if ($oneClickBuy == true && $payment_way == 'oneclickbuy') {
+
 					$card = PagarMe_Card::findById($choosen_card);
+
+					$amount_to_capture = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
+
+					$array_installments = $amount_to_capture['installments'];
+
+					$interest_rate_amount = 0;
+
+					foreach ($array_installments as $key) {
+			
+						if($key['installment'] == Tools::getValue('installment')){
+
+							$interest_rate_amount = $key['amount'];
+
+							break;
+
+						}
+					}
+
 					$transaction = new PagarMe_Transaction(array(
-						'amount' => $cart->getOrderTotal()*100,
+						'amount' => $interest_rate_amount,
 						'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 						'card' => PagarMe_Card::findById($choosen_card),
 						'customer' => array(
@@ -507,8 +537,8 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 		$free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
 
-		$response = PagarMe_Transaction::calculateInstallmentsAmount($amount,$interest_rate,$max_installments,$free_installments);
+		$responsePagarMe = PagarMe_Transaction::calculateInstallmentsAmount($amount,$interest_rate,$max_installments,$free_installments);
 
-		return $response;
+		return $responsePagarMe;
 	}
 }
