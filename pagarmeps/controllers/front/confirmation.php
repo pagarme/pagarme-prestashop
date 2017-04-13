@@ -114,55 +114,56 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			try {
 				//Customer informations
 				$customer = new Customer((int)$cart->id_customer);
-                $address = new Address((int)$cart->id_address_invoice);
-                $phone = empty($address->phone)?$address->phone_mobile:$address->phone;
-                $phone = preg_replace('/\D/', '', $phone);
-                $ddd = '';
-                if(!empty($phone) && Tools::strlen($phone) > 2) {
-                        $ddd = Tools::substr($phone, 0, 2);
-                        $phone = Tools::substr($phone, 2, Tools::strlen($phone));
-                }
+				$address = new Address((int)$cart->id_address_invoice);
+				$phone = empty($address->phone)?$address->phone_mobile:$address->phone;
+				$phone = preg_replace('/\D/', '', $phone);
+				$ddd = '';
+				if(!empty($phone) && Tools::strlen($phone) > 2) {
+					$ddd = Tools::substr($phone, 0, 2);
+					$phone = Tools::substr($phone, 2, Tools::strlen($phone));
+				}
 				if($integrationMode == 'gateway') {
 					if ($payment_way == 'card' && !empty($card_hash)) {
 
 						$installment = 1;
 
+						$responseCalculateInstallments;
+
 						if(Tools::isSubmit('installment') != false && (bool)Configuration::get('PAGARME_INSTALLMENT') === true){
-							$installment = Tools::getValue('installment');
-							$maxInstallments = Pagarmeps::getInstallmentMaxi($cart->getOrderTotal());
-							$installment = min($installment, $maxInstallments);
+
+							$responseCalculateInstallments = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
 						}
 
 						$transaction = new PagarMe_Transaction(array(
 							'capture'      => true,
 							'async'        => false,
-							'amount'       => $cart->getOrderTotal()*100,
+							'amount'       => $this->amountToCapture($responseCalculateInstallments),
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 							'card_hash'    => $card_hash,
 							'installments' => $installment,
 							'customer'     => array(
-									'name'            => $customer->firstname.' '.$customer->lastname,
-									'document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
-									'email'           => $customer->email,
-									'address'         => array(
-										'street'        => $address->address1,
-										'neighborhood'  => $address->address2,
-										'zipcode'       => $address->postcode,
-										'street_number' => $this->getAddressNumber($address),
-										'complementary' => $address->other
-								),
+								'name'            => $customer->firstname.' '.$customer->lastname,
+								'document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
+								'email'           => $customer->email,
+								'address'         => array(
+									'street'        => $address->address1,
+									'neighborhood'  => $address->address2,
+									'zipcode'       => $address->postcode,
+									'street_number' => $this->getAddressNumber($address),
+									'complementary' => $address->other
+									),
 								'phone' => array(
 									'ddd'    => $ddd,
 									'number' => $phone
+									)
 								)
-							)
-						));
+							));
 						$transaction->charge();
 
 						if ($transaction->getStatus() === 'refused') {
 							throw new PagarMe_Exception(
 								'Houve um problema ao processar o pagamento'
-							);
+								);
 						}
 
 						$card = $transaction->getCard();
@@ -176,11 +177,11 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							NULL,
 							array(
 								'{card_info}' => $cardInfo
-							),
+								),
 							$currency_id,
 							false,
 							$secure_key
-						);
+							);
 
 						$card_id = $transaction->card->id;
 
@@ -202,13 +203,13 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 									'zipcode' => $address->postcode,
 									'street_number' => $this->getAddressNumber($address),
 									'complementary' => $address->other
-								),
+									),
 								'phone' => array(
 									'ddd' => $ddd,
 									'number' => $phone
+									)
 								)
-							)
-						));
+							));
 						$transaction->charge();
 						$this->module->validateOrder(
 							$cart->id,
@@ -220,7 +221,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							$currency_id,
 							false,
 							$secure_key
-						);
+							);
 
 					}
 				} else if($integrationMode == 'checkout_transparente' && !empty($token)) {
@@ -230,9 +231,10 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						$this->createDiscountAmount();
 					}
 
-					//	var_dump($this->context->cart->getOrderTotal()); die;
+					$responseCalculateInstallments = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
 
-					$transaction->captureAdv($this->context->cart->getOrderTotal()*100, array());
+					$transaction->captureAdv($this->amountToCaptureCheckout($responseCalculateInstallments, $transaction));
+
 					$ct_payment_method = $transaction->payment_method;
 
 					if ($transaction->getPaymentMethod() == 'credit_card') {
@@ -254,16 +256,20 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						NULL,
 						array(
 							'{card_info}' => $cardInfo
-						),
+							),
 						$currency_id,
 						false,
 						$secure_key
-					);
+						);
 
 				} else if ($oneClickBuy == true && $payment_way == 'oneclickbuy') {
+					
 					$card = PagarMe_Card::findById($choosen_card);
+
+					$responseCalculateInstallments = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
+
 					$transaction = new PagarMe_Transaction(array(
-						'amount' => $cart->getOrderTotal()*100,
+						'amount' => $this->amountToCapture($responseCalculateInstallments),
 						'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 						'card' => PagarMe_Card::findById($choosen_card),
 						'customer' => array(
@@ -276,13 +282,13 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 								'zipcode' => $address->postcode,
 								'street_number' => $this->getAddressNumber($address),
 								'complementary' => $address->other
-							),
+								),
 							'phone' => array(
 								'ddd' => $ddd,
 								'number' => $phone
+								)
 							)
-						)
-					));
+						));
 					$transaction->charge();
 
 					$card = $transaction->getCard();
@@ -296,11 +302,11 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						NULL,
 						array(
 							'{card_info}' => $cardInfo
-						),
+							),
 						$currency_id,
 						false,
 						$secure_key
-					);
+						);
 
 				}
 			} catch (PagarMe_Exception $e) {
@@ -483,4 +489,44 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		$discountAmount = (Configuration::get('PAGARME_DISCOUNT_BOLETO') / 100) * $totalAmountFreeShipping;
 		return number_format($discountAmount, '2', '.', '');
 	}
+
+	private function calculateInstallmentsForOrder($amount){
+
+		$interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
+
+		$max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
+
+		$free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+
+		$response = PagarMe_Transaction::calculateInstallmentsAmount($amount, $interest_rate, $max_installments, $free_installments);
+
+		return $response;
+	}
+
+	private function amountToCapture($responseCalculateInstallments){
+
+		$candidate_installments  = $responseCalculateInstallments['installments'];
+
+		foreach ($candidate_installments as $candidate_installment) {
+			
+			if($candidate_installment['installment'] == Tools::getValue('installment')){
+
+				return $candidate_installment['amount'];
+			}
+		}
+	}
+
+	private function amountToCaptureCheckout($responseCalculateInstallments, $transaction){
+
+		$candidate_installments  = $responseCalculateInstallments['installments'];
+
+		foreach ($candidate_installments as $candidate_installment) {
+			
+			if($candidate_installment['installment'] == $transaction->installments){
+
+				return $candidate_installment['amount'];
+			}
+		}
+	}
+
 }
