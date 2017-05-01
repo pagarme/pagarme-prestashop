@@ -234,7 +234,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 					$responseCalculateInstallments = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
 
-					$transaction->captureAdv($this->amountToCaptureCheckout($responseCalculateInstallments, $transaction));
+					$transaction->captureAdv($this->amountToCapture($responseCalculateInstallments, $transaction));
 
 					$ct_payment_method = $transaction->payment_method;
 
@@ -491,28 +491,41 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		return number_format($discountAmount, '2', '.', '');
 	}
 
-	private function amountToCapture($responseCalculateInstallments){
+	private function calculateInstallmentsForOrder($amount){
 
-		$candidate_installments  = $responseCalculateInstallments['installments'];
+		$interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
 
-		foreach ($candidate_installments as $candidate_installment) {
-			
-			if($candidate_installment['installment'] == Tools::getValue('installment')){
+		$max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
 
-				return $candidate_installment['amount'];
-			}
-		}
+		$free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+
+		$response = PagarMe_Transaction::calculateInstallmentsAmount($amount, $interest_rate, $max_installments, $free_installments);
+
+		return $response;
 	}
 
-	private function amountToCaptureCheckout($responseCalculateInstallments, $transaction){
+	private function amountToCapture($responseCalculateInstallments, $transaction){
 
 		$candidate_installments  = $responseCalculateInstallments['installments'];
 
-		foreach ($candidate_installments as $candidate_installment) {
-			
-			if($candidate_installment['installment'] == $transaction->installments){
+		if ($transaction == null){
 
-				return $candidate_installment['amount'];
+			foreach ($candidate_installments as $candidate_installment) {
+			
+				if($candidate_installment['installment'] == Tools::getValue('installment')){
+
+					return $candidate_installment['amount'];
+				}
+			}
+		}
+		else{
+
+			foreach ($candidate_installments as $candidate_installment) {
+			
+				if($candidate_installment['installment'] == $transaction->installments){
+
+					return $candidate_installment['amount'];
+				}
 			}
 		}
 	}
