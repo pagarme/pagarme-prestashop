@@ -504,29 +504,19 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		return $response;
 	}
 
-	private function amountToCapture($responseCalculateInstallments, $transaction){
+	private function amountToCapture($responseCalculateInstallments, $transaction = null){
 
-		$candidate_installments  = $responseCalculateInstallments['installments'];
+		$candidate_installments = $responseCalculateInstallments['installments'];
+		$installments = Tools::getValue('installment');
 
-		if ($transaction == null){
-
-			foreach ($candidate_installments as $candidate_installment) {
-			
-				if($candidate_installment['installment'] == Tools::getValue('installment')){
-
-					return $candidate_installment['amount'];
-				}
-			}
+		if (!is_null($transaction)) {
+    		$installments = $transaction->installments;
 		}
-		else{
 
-			foreach ($candidate_installments as $candidate_installment) {
-			
-				if($candidate_installment['installment'] == $transaction->installments){
-
-					return $candidate_installment['amount'];
-				}
-			}
+		foreach ($candidate_installments as $candidate_installment) {
+    		if ($candidate_installment['installment'] == $installments) {
+        		return $candidate_installment['amount'];
+    		}
 		}
 	}
 }
