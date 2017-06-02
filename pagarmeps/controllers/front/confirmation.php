@@ -510,13 +510,13 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 		$installments = Tools::getValue('installment');
 
 		if (!is_null($transaction)) {
-    		$installments = $transaction->installments;
+			$installments = $transaction->installments;
 		}
 
 		foreach ($candidate_installments as $candidate_installment) {
-    		if ($candidate_installment['installment'] == $installments) {
-        		return $candidate_installment['amount'];
-    		}
+			if ($candidate_installment['installment'] == $installments) {
+				return $candidate_installment['amount'];
+			}
 		}
 	}
 }
