@@ -25,6 +25,8 @@
  *  @license
  */
 
+use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -125,7 +127,8 @@ class Pagarmeps extends PaymentModule
         $this->registerHook('cart') &&
         $this->registerHook('displayShoppingCart') &&
         $this->registerHook('shoppingCartExtra') &&
-        $this->registerHook('customerAccount');
+        $this->registerHook('customerAccount') &&
+            $this->registerHook('paymentOptions');
     }
 
     public function uninstall()
@@ -805,6 +808,19 @@ class Pagarmeps extends PaymentModule
         $this->context->controller->addJS($this->_path.'/views/js/front.js');
         $this->context->controller->addCSS($this->_path.'/views/css/front.css');
     }
+        /**
+         * Method responsible to hook the payment module,
+         * according to prestashop 1.7
+         */
+        public function hookPaymentOptions(){
+            $newOption = new PaymentOption();
+            $newOption->setCallToActionText($this->l('Pay Pagarme'))
+                ->setForm($this->generateForm())
+                ->setAdditionalInformation($this->context->smarty->fetch('module:pagarmeps/views/templates/hook/payment-transparent.tpl'));
+            
+            return [$newOption];
+        }
+
 
     /**
      * This method is used to render the payment button,
