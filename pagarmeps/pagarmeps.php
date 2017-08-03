@@ -815,9 +815,10 @@ class Pagarmeps extends PaymentModule
         public function hookPaymentOptions(){
             $newOption = new PaymentOption();
             $newOption->setCallToActionText($this->l('Pay Pagarme'))
-                ->setForm($this->generateForm())
-                ->setAdditionalInformation($this->context->smarty->fetch('module:pagarmeps/views/templates/hook/payment-transparent.tpl'));
-            
+                ->setForm($this->context->smarty->fetch('module:pagarmeps/views/templates/hook/payment-transparent.tpl'))
+                ->setAdditionalInformation($this->context->smarty->fetch('module:pagarmeps/views/templates/hook/payment-transparent.tpl'))
+                ->setLogo(Media::getMediaPath(_PS_MODULE_DIR.$this->name.'/logo.png');
+
             return [$newOption];
         }
 
