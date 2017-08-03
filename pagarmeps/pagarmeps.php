@@ -861,7 +861,7 @@ class Pagarmeps extends PaymentModule
 
             $max_installments = 1;
             if ((bool)Configuration::get('PAGARME_INSTALLMENT') == true) {
-                $max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
+                $max_installments = Pagarmeps::getInstallmentMaxi($total_order);
             }
 
             $interest_rate = '';
