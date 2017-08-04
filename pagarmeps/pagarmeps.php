@@ -63,7 +63,7 @@ class Pagarmeps extends PaymentModule
         spl_autoload_register(array($this, 'loader'));
         parent::__construct();
 
-        $this->context->smarty->fetchName = $this->l('Pagar.Me');
+        $this->context->smarty->displayName = $this->l('Pagar.Me');
         $this->description = $this->l('O Pagar.me aprova 92 a cada 100 tentativas de pagamento para aumentar sua receita com conversão de gateway e facilidade de PSP.');
 
         $this->confirmUninstall = $this->l('Are you really sure you want to uninstall this module ?');
@@ -128,7 +128,7 @@ class Pagarmeps extends PaymentModule
         $this->registerHook('displayShoppingCart') &&
         $this->registerHook('shoppingCartExtra') &&
         $this->registerHook('customerAccount') &&
-            $this->registerHook('paymentOptions');
+        $this->registerHook('paymentOptions');
     }
 
     public function uninstall()
