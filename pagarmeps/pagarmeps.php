@@ -63,7 +63,7 @@ class Pagarmeps extends PaymentModule
         spl_autoload_register(array($this, 'loader'));
         parent::__construct();
 
-        $this->displayName = $this->l('Pagar.Me');
+        $this->context->smarty->fetchName = $this->l('Pagar.Me');
         $this->description = $this->l('O Pagar.me aprova 92 a cada 100 tentativas de pagamento para aumentar sua receita com conversão de gateway e facilidade de PSP.');
 
         $this->confirmUninstall = $this->l('Are you really sure you want to uninstall this module ?');
@@ -937,21 +937,21 @@ class Pagarmeps extends PaymentModule
             ));
             $this->smarty->assign('pay_way', $payWay);
 
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-transparent.tpl');
+            $return = $this->context->smarty->fetch(__FILE__.'views/templates/hook/payment-transparent.tpl');
         } elseif ($integrationMode == 'gateway' && $payWay == 'credit_card') {
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-card.tpl');
+            $return = $this->context->smarty->fetch(__FILE__.'views/templates/hook/payment-card.tpl');
         } elseif ($integrationMode == 'gateway' && $payWay == 'boleto') {
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-boleto.tpl');
+            $return = $this->context->smarty->fetch(__FILE__.'views/templates/hook/payment-boleto.tpl');
         } elseif ($integrationMode == 'gateway' && $payWay == 'both') {
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-card.tpl');
-            $return = $return.$this->display(__FILE__, 'views/templates/hook/payment-boleto.tpl');
+            $return = $this->context->smarty->fetch(__FILE__.'views/templates/hook/payment-card.tpl');
+            $return = $return.$this->context->smarty->fetch(__FILE__.'views/templates/hook/payment-boleto.tpl');
         }
 
 //		//One Click Buy
 //		if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
 //			$cart = Context::getContext()->cart;
 //			if(PagarmepsCardClass::hasRegisteredCard((int)$cart->id_customer)){
-//				$return = $return.$this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
+//				$return = $return.$this->context->smarty->fetch(__FILE__.'views/templates/hook/payment-oneclick.tpl');
 //			}
 //		}
 
@@ -1011,7 +1011,7 @@ class Pagarmeps extends PaymentModule
             'total' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
         ));
 
-        return $this->display(__FILE__, 'views/templates/hook/confirmation.tpl');
+        return $this->context->smarty->fetch(__FILE__.'views/templates/hook/confirmation.tpl');
     }
 
     public function hookActionPaymentCCAdd()
@@ -1057,14 +1057,14 @@ class Pagarmeps extends PaymentModule
                 'wishlists' => WishList::getByIdCustomer($cookie->id_customer),
             ));
 
-        return ($this->display(__FILE__, 'blockwishlist-extra.tpl'));*/
+        return ($this->context->smarty->fetch(__FILE__.'blockwishlist-extra.tpl'));*/
     }
 
     public function hookCustomerAccount($params)
     {
         if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
             if (PagarmepsCardClass::hasRegisteredCard((int)$params['cookie']->id_customer)) {
-                return $this->display(__FILE__, 'views/templates/hook/my-account.tpl');
+                return $this->context->smarty->fetch(__FILE__.'views/templates/hook/my-account.tpl');
             }
         }
     }
@@ -1084,7 +1084,7 @@ class Pagarmeps extends PaymentModule
                     'zone' => 'cart-extra',
                 ));
 
-                return $this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
+                return $this->context->smarty->fetch(__FILE__.'views/templates/hook/payment-oneclick.tpl');
             }
         }
     }
@@ -1255,6 +1255,6 @@ class Pagarmeps extends PaymentModule
             )
         );
 
-        return $return.$this->display(__FILE__, 'views/templates/hook/boleto_detail.tpl');
+        return $return.$this->context->smarty->fetch(__FILE__.'views/templates/hook/boleto_detail.tpl');
     }
 }
