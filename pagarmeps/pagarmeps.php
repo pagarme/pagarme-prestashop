@@ -836,6 +836,8 @@ class Pagarmeps extends PaymentModule
 
         $return = '';
         if ($integrationMode == 'checkout_transparente') {
+            $this->context->controller->addJquery();
+            $this->context->controller->addJS(array('https://assets.pagar.me/checkout/checkout.js'))
             $cart = Context::getContext()->cart;
 
             $confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME') == 1 ? "true" : "false";
