@@ -497,7 +497,15 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 		$max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
 
-		$free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+		$configured_free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+		$free_installments = 0;
+		if ($configured_free_installments == 'all'){
+			$free_installments = $max_installments;
+		} else if ($configured_free_installments == 'none'){
+			$free_installments = '0';
+		} else {
+			$free_installments = $configured_free_installments;
+		}
 
 		$response = PagarMe_Transaction::calculateInstallmentsAmount($amount, $interest_rate, $max_installments, $free_installments);
 

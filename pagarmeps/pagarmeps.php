@@ -837,7 +837,7 @@ class Pagarmeps extends PaymentModule
         $return = '';
         if ($integrationMode == 'checkout_transparente') {
             $this->context->controller->addJquery();
-            $this->context->controller->addJS(array('https://assets.pagar.me/checkout/checkout.js'))
+            $this->context->controller->addJS(array('https://assets.pagar.me/checkout/checkout.js'));
             $cart = Context::getContext()->cart;
 
             $confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME') == 1 ? "true" : "false";
@@ -885,6 +885,7 @@ class Pagarmeps extends PaymentModule
 
             $addressNumber = explode(',', $address->address1);
 
+            $addressComplement = '';
             if (isset($addressNumber[1])) {
                 if (isset($addressNumber[2])) {
                     $addressComplement = $addressNumber[2];
