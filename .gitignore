@@ -31,3 +31,5 @@ download/
 /img/*
 upload/
 .idea/
+
+tests/node_modules/*
