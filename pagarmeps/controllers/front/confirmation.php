@@ -440,9 +440,13 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			}
 		}
 
+		$languages = Language::getLanguages();
+		foreach($languages as $key => $language) {
+			$cart_rule_names[$language['id_lang']] = "Desconto Boleto";
+		}
 		$cart_rule = new CartRule();
-		
-		$cart_rule->name = array("Desconto Boleto","Desconto Boleto");
+
+		$cart_rule->name = $cart_rule_names;
 		$cart_rule->id_customer = $this->context->cart->id_customer;
 		$cart_rule->date_from = date('Y-m-d H:i:s');
 		$cart_rule->date_to = date('Y-m-d H:i:s', strtotime("+2 days",strtotime(date('Y-m-d'))));
