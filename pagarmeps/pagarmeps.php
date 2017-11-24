@@ -641,7 +641,6 @@ class Pagarmeps extends PaymentModule
                             'query' => array(
                                 array('id_max' => 'all', 'name' => $this->l('Without tax at all')),
                                 array('id_max' => 'none', 'name' => $this->l('Every parcel with tax')),
-                                array('id_max' => '1', 'name' => '1 '.$this->l('Parcels without tax')),
                                 array('id_max' => '2', 'name' => '2 '.$this->l('Parcels without tax')),
                                 array('id_max' => '3', 'name' => '3 '.$this->l('Parcels without tax')),
                                 array('id_max' => '4', 'name' => '4 '.$this->l('Parcels without tax')),
@@ -878,7 +877,7 @@ class Pagarmeps extends PaymentModule
                 if ($free_installments == 'all') { // Sem juros nenhum
                     $free_installments = $max_installments;
                 } elseif ($free_installments == 'none') { // todas as parcelas com juros
-                    $free_installments = 0;
+                    $free_installments = 1;
                 }
             }
 
@@ -1128,7 +1127,7 @@ class Pagarmeps extends PaymentModule
                 if ($free_installments == 'all') { // Sem juros nenhum
                     $free_installments = $max_installments;
                 } elseif ($free_installments == 'none') { // todas as parcelas com juros
-                    $free_installments = 0;
+                    $free_installments = 1;
                 }
             }
 
