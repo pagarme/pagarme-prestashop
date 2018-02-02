@@ -144,7 +144,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							'installments' => $installment,
 							'customer'     => array(
 									'name'            => $customer->firstname.' '.$customer->lastname,
-									'document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
+									'document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
 									'email'           => $customer->email,
 									'address'         => array(
 										'street'        => $address->address1,
@@ -196,7 +196,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							'payment_method' => 'boleto',
 							'customer' => array(
 								'name' => $customer->firstname.' '.$customer->lastname,
-								'document_number' => Pagarmeps::getCustomerCPFouCNPJ((int)$cart->id_customer),
+								'document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
 								'email' => $customer->email,
 								'address' => array(
 									'street' => $address->address1,
