@@ -1180,6 +1180,9 @@ class Pagarmeps extends PaymentModule
                 include_once('../djtalbrazilianregister/djtalbrazilianregister.php');
             }
 
+            if (file_exists('../cpfmodule/cpfmodule.php')) {
+                include_once('../cpfmodule/cpfmodule.php');
+            }
 
             if (method_exists('BrazilianRegister', 'getByCustomerId') && method_exists('Djtalbrazilianregister', 'mascaraString')) {
                 $documentNumber = BrazilianRegister::getByCustomerId($id_customer);
@@ -1189,9 +1192,21 @@ class Pagarmeps extends PaymentModule
                 }
 
                 return $documentNumber['cnpj'];
-            } else {
-                return '';
             }
+
+            if ( method_exists('cpfmodule', 'getDoc') ) {
+              $documentNumber = new cpfmodule();
+
+              $documentNumber = $documentNumber->getDoc($id_customer);
+
+              if($documentNumber->number){
+                return $documentNumber->number;
+              }
+
+            }
+
+            return '';
+
         } catch (Exception $e) {
             return null;
         }
