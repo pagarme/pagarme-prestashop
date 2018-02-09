@@ -126,8 +126,6 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 					
 					if ($payment_way == 'card' && !empty($card_hash)) {
 
-						$installment = 1;
-
 						$responseCalculateInstallments;
 
 						if(Tools::isSubmit('installment') != false && (bool)Configuration::get('PAGARME_INSTALLMENT') === true){
@@ -141,7 +139,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							'amount'       => $this->amountToCapture($responseCalculateInstallments),
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 							'card_hash'    => $card_hash,
-							'installments' => $installment,
+							'installments' => Tools::getValue('installment'),
 							'customer'     => array(
 									'name'            => $customer->firstname.' '.$customer->lastname,
 									'document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
@@ -194,6 +192,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							'amount' => $cart->getOrderTotal()*100,
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 							'payment_method' => 'boleto',
+							'async' => false,
 							'customer' => array(
 								'name' => $customer->firstname.' '.$customer->lastname,
 								'document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
