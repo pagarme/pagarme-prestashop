@@ -1176,12 +1176,19 @@ class Pagarmeps extends PaymentModule
                 return $address->cpf_cnpj;
             }
 
-            if (file_exists('../djtalbrazilianregister/djtalbrazilianregister.php')) {
-                include_once('../djtalbrazilianregister/djtalbrazilianregister.php');
+            if (file_exists(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php')) {
+                include_once(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php');
             }
 
-            if (file_exists('../cpfmodule/cpfmodule.php')) {
-                include_once('../cpfmodule/cpfmodule.php');
+            if (file_exists(_PS_MODULE_DIR_.'cpfmodule/cpfmodule.php')) {
+                include_once(_PS_MODULE_DIR_.'cpfmodule/cpfmodule.php');
+            }
+
+            if (file_exists(_PS_MODULE_DIR_.'fkcustomers/fkcustomers.php')) {
+
+                $customer = new Customer($id_customer);
+
+                return $customer->cpf_cnpj;
             }
 
             if (method_exists('BrazilianRegister', 'getByCustomerId') && method_exists('Djtalbrazilianregister', 'mascaraString')) {
