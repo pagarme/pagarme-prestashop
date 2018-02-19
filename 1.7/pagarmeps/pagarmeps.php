@@ -29,11 +29,13 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+use PrestaShop\PrestaShop\Core\Payment\PaymentOption;
+
 class Pagarmeps extends PaymentModule
 {
     protected $config_form = false;
 
-    private function loader($className)
+    public function loader($className)
     {
         if (strrpos($className, 'PagarMe_') !== false) {
             $className = Tools::substr($className, 8);
@@ -49,19 +51,22 @@ class Pagarmeps extends PaymentModule
     {
         $this->name = 'pagarmeps';
         $this->tab = 'payments_gateways';
-        $this->version = '1.2.0';
+        $this->version = '0.0.1';
         $this->author = 'Pagar.me';
         $this->need_instance = 0;
 
         /**
-         * Set $this->bootstrap to true if your module is compliant with bootstrap (PrestaShop 1.6)
+         * Set $this->bootstrap to true if your module is compliant with bootstrap (PrestaShop 1.7)
          */
         $this->bootstrap = true;
 
         spl_autoload_register(array($this, 'loader'));
         parent::__construct();
 
-        $this->displayName = $this->l('Pagar.Me');
+        $this->meta_title = $this->l('Pagar.me');
+
+        $this->displayName = $this->l('Pagar.me payment module');
+
         $this->description = $this->l('O Pagar.me aprova 92 a cada 100 tentativas de pagamento para aumentar sua receita com conversão de gateway e facilidade de PSP.');
 
         $this->confirmUninstall = $this->l('Are you really sure you want to uninstall this module ?');
@@ -70,7 +75,7 @@ class Pagarmeps extends PaymentModule
 
         $this->limited_currencies = array('BRL');
 
-        $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
+        $this->ps_versions_compliancy = array('min' => '1.7', 'max' => _PS_VERSION_);
     }
 
     /**
@@ -112,15 +117,12 @@ class Pagarmeps extends PaymentModule
         $this->registerHook('header') &&
         $this->registerHook('displayHeader') &&
         $this->registerHook('backOfficeHeader') &&
-        $this->registerHook('payment') &&
+        $this->registerHook('paymentOptions') &&
         $this->registerHook('paymentReturn') &&
         $this->registerHook('displayOrderDetail') &&
         $this->registerHook('actionPaymentCCAdd') &&
         $this->registerHook('actionPaymentConfirmation') &&
         $this->registerHook('displayHeader') &&
-        $this->registerHook('displayPayment') &&
-        $this->registerHook('displayPaymentReturn') &&
-        $this->registerHook('displayPaymentTop') &&
         $this->registerHook('productActions') &&
         $this->registerHook('cart') &&
         $this->registerHook('displayShoppingCart') &&
@@ -811,13 +813,14 @@ class Pagarmeps extends PaymentModule
      * This method is used to render the payment button,
      * Take care if the button should be displayed or not.
      */
-    public function hookPayment($params)
+    public function hookPaymentOptions($params)
     {
-        //		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
-        //			return;
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        error_reporting(E_ALL);
 
-        $currency_id = $params['cart']->id_currency;
-        $currency = new Currency((int)$currency_id);
+        $currency = new Currency($params['cart']->id_currency);
+        $currency_id = $currency->id;
 
         if (in_array($currency->iso_code, $this->limited_currencies) == false) {
             return false;
@@ -832,114 +835,147 @@ class Pagarmeps extends PaymentModule
 
         $this->smarty->assign('module_dir', $this->_path);
 
+        $payment_options = array();
         $integrationMode = Configuration::get('PAGARME_INTEGRATION_MODE');
         $payWay = Configuration::get('PAGARME_PAY_WAY');
 
-        $return = '';
-        if ($integrationMode == 'checkout_transparente') {
-            $cart = Context::getContext()->cart;
+        // if ($integrationMode == 'checkout_transparente') {
 
-            $confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME') == 1 ? "true" : "false";
+        //     $cart = Context::getContext()->cart;
 
-            $total_order = $cart->getOrderTotal();
-            $customer = new Customer((int)$cart->id_customer);
-            $address = new Address((int)$cart->id_address_invoice);
-            $state = new State((int)$address->id_state);
+        //     $payment_options[] = $transparentCheckout;
+            
+        //     $confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME') == 1 ? "true" : "false";
 
-            $phone = !empty($address->phone_mobile)?$address->phone_mobile:$address->phone;
-            $ddd = '';
+        //     $total_order = $cart->getOrderTotal();
+        //     $customer = new Customer((int)$cart->id_customer);
+        //     $address = new Address((int)$cart->id_address_invoice);
+        //     $state = new State((int)$address->id_state);
 
-            if (!empty($phone) && Tools::strlen($phone) > 2) {
-                if (strrpos($phone, '(') !== false && strrpos($phone, ')') !== false && strrpos($phone, '(') < strrpos($phone, ')')) {
-                    preg_match('#\((.*?)\)#', $phone, $match);
-                    $ddd = $match[1];
-                    $phone = trim(Tools::substr($phone, strrpos($phone, ')')+1));
-                } else {
-                    $ddd = Tools::substr($phone, 0, 2);
-                    $phone = Tools::substr($phone, 2, Tools::strlen($phone));
-                }
-            }
+        //     $phone = !empty($address->phone_mobile)?$address->phone_mobile:$address->phone;
+        //     $ddd = '';
 
-            $max_installments = 1;
-            if ((bool)Configuration::get('PAGARME_INSTALLMENT') == true) {
-                $max_installments = Pagarmeps::getInstallmentMaxi($total_order);
-            }
+        //     if (!empty($phone) && Tools::strlen($phone) > 2) {
+        //         if (strrpos($phone, '(') !== false && strrpos($phone, ')') !== false && strrpos($phone, '(') < strrpos($phone, ')')) {
+        //             preg_match('#\((.*?)\)#', $phone, $match);
+        //             $ddd = $match[1];
+        //             $phone = trim(Tools::substr($phone, strrpos($phone, ')')+1));
+        //         } else {
+        //             $ddd = Tools::substr($phone, 0, 2);
+        //             $phone = Tools::substr($phone, 2, Tools::strlen($phone));
+        //         }
+        //     }
 
-            $interest_rate = '';
-            $conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX');
-            if (!empty($conf_val)) {
-                $interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
-            }
+        //     $max_installments = 1;
+        //     if ((bool)Configuration::get('PAGARME_INSTALLMENT') == true) {
+        //         $max_installments = Pagarmeps::getInstallmentMaxi($total_order);
+        //     }
 
-            $free_installments = '';
-            $conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
-            if (!empty($conf_val)) {
-                $free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
-                if ($free_installments == 'all') { // Sem juros nenhum
-                    $free_installments = $max_installments;
-                } elseif ($free_installments == 'none') { // todas as parcelas com juros
-                    $free_installments = 0;
-                }
-            }
+        //     $interest_rate = '';
+        //     $conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX');
+        //     if (!empty($conf_val)) {
+        //         $interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
+        //     }
 
-            $addressNumber = explode(',', $address->address1);
+        //     $free_installments = '';
+        //     $conf_val = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+        //     if (!empty($conf_val)) {
+        //         $free_installments = Configuration::get('PAGARME_INSTALLMENT_TAX_FREE');
+        //         if ($free_installments == 'all') { // Sem juros nenhum
+        //             $free_installments = $max_installments;
+        //         } elseif ($free_installments == 'none') { // todas as parcelas com juros
+        //             $free_installments = 0;
+        //         }
+        //     }
 
-            if (isset($addressNumber[1])) {
-                if (isset($addressNumber[2])) {
-                    $addressComplement = $addressNumber[2];
-                } else {
-                    $addressComplement = null;
-                }
+        //     $addressNumber = explode(',', $address->address1);
 
-                $addressNumber = $addressNumber[1];
-            }
+        //     if (isset($addressNumber[1])) {
+        //         if (isset($addressNumber[2])) {
+        //             $addressComplement = $addressNumber[2];
+        //         } else {
+        //             $addressComplement = null;
+        //         }
 
-            $this->context->smarty->assign(array(
-                'cart_id' => $cart->id,
-                'total_order' => $total_order,
-                'encryption_key' => $encryption_key,
-                'pay_way' => $payWay,
-                'integration_mode' => $integrationMode,
-                'secure_key' => Context::getContext()->customer->secure_key,
-                'confirm_customer_data' => $confirm_customer_data,
-                'customer_name' => $customer->firstname.' '.$customer->lastname,
-                'customer_email' => $customer->email,
-                'address_street' => $address->address1,
-                'address_street_number' => filter_var($addressNumber, FILTER_SANITIZE_NUMBER_INT),
-                'address_complementary' => ($address->other) ? $address->other : $addressComplement,
-                'address_neighborhood' => $address->address2,
-                'address_city' => $address->city,
-                'address_state' => $state->name,
-                'address_zipcode' => $address->postcode,
-                'phone_ddd' => $ddd,
-                'phone_number' => $phone,
-                'customer_document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
-                'max_installments' => $max_installments,
-                'interest_rate' => $interest_rate,
-                'free_installments' => $free_installments,
-                'boleto_discount_amount' => $this->calculateBoletoDiscount()
-            ));
-            $this->smarty->assign('pay_way', $payWay);
+        //         $addressNumber = $addressNumber[1];
+        //     }
 
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-transparent.tpl');
-        } elseif ($integrationMode == 'gateway' && $payWay == 'credit_card') {
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-card.tpl');
+        //     $this->context->smarty->assign(array(
+        //         'cart_id' => $cart->id,
+        //         'total_order' => $total_order,
+        //         'encryption_key' => $encryption_key,
+        //         'pay_way' => $payWay,
+        //         'integration_mode' => $integrationMode,
+        //         'secure_key' => Context::getContext()->customer->secure_key,
+        //         'confirm_customer_data' => $confirm_customer_data,
+        //         'customer_name' => $customer->firstname.' '.$customer->lastname,
+        //         'customer_email' => $customer->email,
+        //         'address_street' => $address->address1,
+        //         'address_street_number' => filter_var($addressNumber, FILTER_SANITIZE_NUMBER_INT),
+        //         'address_complementary' => ($address->other) ? $address->other : $addressComplement,
+        //         'address_neighborhood' => $address->address2,
+        //         'address_city' => $address->city,
+        //         'address_state' => $state->name,
+        //         'address_zipcode' => $address->postcode,
+        //         'phone_ddd' => $ddd,
+        //         'phone_number' => $phone,
+        //         'customer_document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
+        //         'max_installments' => $max_installments,
+        //         'interest_rate' => $interest_rate,
+        //         'free_installments' => $free_installments,
+        //         'boleto_discount_amount' => $this->calculateBoletoDiscount()
+        //     ));
+        //     $this->smarty->assign('pay_way', $payWay);
+
+        //     $payment_options[] = $this->getCheckoutTransparentPayment();
+        // } else
+        $this->smarty->assign('pay_way', $payWay);
+        if ($integrationMode == 'gateway' && $payWay == 'credit_card') {
+            $paymentOptions[] = $this->getCreditCardPayment();
         } elseif ($integrationMode == 'gateway' && $payWay == 'boleto') {
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-boleto.tpl');
+            $paymentOptions[] = $this->getBoletoPayment();
         } elseif ($integrationMode == 'gateway' && $payWay == 'both') {
-            $return = $this->display(__FILE__, 'views/templates/hook/payment-card.tpl');
-            $return = $return.$this->display(__FILE__, 'views/templates/hook/payment-boleto.tpl');
+            $paymentOptions[] = $this->getBoletoPayment();
+            $paymentOptions[] = $this->getCreditCardPayment();
         }
 
-//		//One Click Buy
-//		if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
-//			$cart = Context::getContext()->cart;
-//			if(PagarmepsCardClass::hasRegisteredCard((int)$cart->id_customer)){
-//				$return = $return.$this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
-//			}
-//		}
+        return $paymentOptions;
+    }
 
-        return $return;
+    public function getCheckoutTransparentPayment() {
+        $transparentCheckout = new PaymentOption();
+        //$transparentCheckout->setCallToActionText($this->l('Checkout Pagar.me'))
+        //    ->setForm($this->context->smarty->fetch(__FILE__, 'views/templates/hook/payment-transparent.tpl'))
+        //    ->setAdditionalInformation($this->context->smarty->fetch('module:pagarmeps/views/templates/hook/payment-transparent.tpl'))
+        //    ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/both.png'));
+        return $transparentCheckout;
+    }
+
+    public function getCreditCardPayment() {
+        $creditCard = new PaymentOption();
+        $creditCard->setCallToActionText($this->l('Cartão de crédito'))
+             ->setAction($this->context->link->getModuleLink($this->name, 'confirmation', array(), true))
+             //->setForm($this->context->smarty->fetch(__FILE__, 'views/templates/hook/payment-card.tpl'))
+             ->setAdditionalInformation($this->context->smarty->fetch('module:pagarmeps/views/templates/hook/payment-card.tpl'))
+             ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/cards.png'));
+        return $creditCard;
+    }
+
+
+    public function getBoletoPayment() {
+        $boletoPayment = new PaymentOption();
+        $boletoPayment->setCallToActionText($this->l('Boleto bancário'))
+           ->setAction($this->context->link->getModuleLink($this->name, 'confirmation', ['cart_id' => Context::getContext()->cart->id, 'secure_key' => Context::getContext()->customer->secure_key, 'payment_way' => 'boleto'], true))
+           ->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/boleto.png'))
+           ->setInputs([
+                'payment_way' => [
+                    'name' => 'payment_way',
+                    'type' => 'hidden',
+                    'value' => 'boleto'
+                ]
+            ]);
+
+        return $boletoPayment;
     }
 
     protected function calculateBoletoDiscount()
@@ -972,7 +1008,7 @@ class Pagarmeps extends PaymentModule
             return;
         }
 
-        $order = $params['objOrder'];
+        $order = $params['order'];
         $transactionId = PagarmepsTransactionClass::getTransactionIdByOrderId($order->id);
 
         $api_key = Configuration::get('PAGARME_API_KEY');
@@ -983,19 +1019,25 @@ class Pagarmeps extends PaymentModule
         $boleto_barcode = $transaction->boleto_barcode; // código de barras do boleto bancário
 
         if ($order->getCurrentOrderState()->id != Configuration::get('PS_OS_ERROR')) {
-            $this->smarty->assign('status', 'ok');
+            $this->smarty->assign(array('status' => 'ok'));
         }
-
-        $this->smarty->assign(array(
+        $error = Configuration::get('PS_OS_ERROR');
+        $this->context->smarty->assign(array(
+            'error' => $error,
+            'status' => 'ok',
             'id_order' => $order->id,
             'reference' => $order->reference,
             'params' => $params,
             'boleto_url' => $boleto_url,
             'boleto_barcode' => $boleto_barcode,
-            'total' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
+            'total' => Tools::displayPrice(
+                $order->getOrdersTotalPaid(), 
+                new Currency($params['cart']->id_currency),
+                false
+            )
         ));
 
-        return $this->display(__FILE__, 'views/templates/hook/confirmation.tpl');
+        return $this->context->smarty->fetch(_PS_MODULE_DIR_.'pagarmeps/views/templates/hook/confirmation.tpl');
     }
 
     public function hookActionPaymentCCAdd()
@@ -1013,42 +1055,16 @@ class Pagarmeps extends PaymentModule
         $this->hookHeader();
     }
 
-    public function hookDisplayPayment($params)
-    {
-        return $this->hookPayment($params);
-    }
-
     public function hookDisplayPaymentReturn($params)
     {
         return $this->hookPaymentReturn($params);
-    }
-
-    public function hookDisplayPaymentTop()
-    {
-    }
-
-
-    public function hookProductActions($params)
-    {
-        /*$cookie = $params['cookie'];
-
-        $this->smarty->assign(array(
-            'id_product' => (int)Tools::getValue('id_product'),
-        ));
-
-        if (isset($cookie->id_customer))
-            $this->smarty->assign(array(
-                'wishlists' => WishList::getByIdCustomer($cookie->id_customer),
-            ));
-
-        return ($this->display(__FILE__, 'blockwishlist-extra.tpl'));*/
     }
 
     public function hookCustomerAccount($params)
     {
         if ((bool)Configuration::get('PAGARME_ONE_CLICK_BUY') == true) {
             if (PagarmepsCardClass::hasRegisteredCard((int)$params['cookie']->id_customer)) {
-                return $this->display(__FILE__, 'views/templates/hook/my-account.tpl');
+                return $this->context->smarty->fetch(__FILE__. 'views/templates/hook/my-account.tpl');
             }
         }
     }
@@ -1068,7 +1084,7 @@ class Pagarmeps extends PaymentModule
                     'zone' => 'cart-extra',
                 ));
 
-                return $this->display(__FILE__, 'views/templates/hook/payment-oneclick.tpl');
+                return $this->context->smarty->fetch(__FILE__. 'views/templates/hook/payment-oneclick.tpl');
             }
         }
     }
@@ -1199,14 +1215,13 @@ class Pagarmeps extends PaymentModule
 
               $documentNumber = $documentNumber->getDoc($id_customer);
 
-              if($documentNumber->number){
-                return $documentNumber->number;
+              if($documentNumber['number']){
+                return $documentNumber['number'];
               }
 
+            } else {
+                return '';
             }
-
-            return '';
-
         } catch (Exception $e) {
             return null;
         }
@@ -1254,6 +1269,6 @@ class Pagarmeps extends PaymentModule
             )
         );
 
-        return $return.$this->display(__FILE__, 'views/templates/hook/boleto_detail.tpl');
+        return $this->context->smarty->fetch(_PS_MODULE_DIR_.'pagarmeps/views/templates/hook/boleto_detail.tpl');
     }
 }

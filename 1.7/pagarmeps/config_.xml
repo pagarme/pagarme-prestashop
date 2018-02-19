@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+	<name>pagarmeps</name>
+	<displayName><![CDATA[Pagar.Me]]></displayName>
+	<version><![CDATA[1.2.0]]></version>
+	<description><![CDATA[O Pagar.me aprova 92 a cada 100 tentativas de pagamento para aumentar sua receita com convers&atilde;o de gateway e facilidade de PSP.]]></description>
+	<author><![CDATA[Pagar.me]]></author>
+	<tab><![CDATA[payments_gateways]]></tab>
+	<confirmUninstall><![CDATA[Are you really sure you want to uninstall this module ?]]></confirmUninstall>
+	<is_configurable>1</is_configurable>
+	<need_instance>0</need_instance>
+	<limited_countries>BR</limited_countries>
+</module>
