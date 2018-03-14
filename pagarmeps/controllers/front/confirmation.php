@@ -115,13 +115,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 				//Customer informations
 				$customer = new Customer((int)$cart->id_customer);
                 $address = new Address((int)$cart->id_address_invoice);
-                $phone = empty($address->phone)?$address->phone_mobile:$address->phone;
-                $phone = preg_replace('/\D/', '', $phone);
-                $ddd = '';
-                if(!empty($phone) && Tools::strlen($phone) > 2) {
-                        $ddd = Tools::substr($phone, 0, 2);
-                        $phone = Tools::substr($phone, 2, Tools::strlen($phone));
-                }
+
 				if($integrationMode == 'gateway') {
 					
 					if ($payment_way == 'card' && !empty($card_hash)) {
@@ -140,22 +134,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 							'card_hash'    => $card_hash,
 							'installments' => Tools::getValue('installment'),
-							'customer'     => array(
-									'name'            => $customer->firstname.' '.$customer->lastname,
-									'document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
-									'email'           => $customer->email,
-									'address'         => array(
-										'street'        => $address->address1,
-										'neighborhood'  => $address->address2,
-										'zipcode'       => $address->postcode,
-										'street_number' => $this->getAddressNumber($address),
-										'complementary' => $address->other
-								),
-								'phone' => array(
-									'ddd'    => $ddd,
-									'number' => $phone
-								)
-							)
+							'customer'     => $this->getCustomerData($customer, $address, $cart)
 						));
 						$transaction->charge();
 
@@ -193,22 +172,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 							'payment_method' => 'boleto',
 							'async' => false,
-							'customer' => array(
-								'name' => $customer->firstname.' '.$customer->lastname,
-								'document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
-								'email' => $customer->email,
-								'address' => array(
-									'street' => $address->address1,
-									'neighborhood' => $address->address2,
-									'zipcode' => $address->postcode,
-									'street_number' => $this->getAddressNumber($address),
-									'complementary' => $address->other
-								),
-								'phone' => array(
-									'ddd' => $ddd,
-									'number' => $phone
-								)
-							)
+							'customer' => $this->getCustomerData($customer, $address, $cart)
 						));
 						$transaction->charge();
 						$this->module->validateOrder(
@@ -274,22 +238,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						'amount' => $this->amountToCapture($responseCalculateInstallments),
 						'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
 						'card' => PagarMe_Card::findById($choosen_card),
-						'customer' => array(
-							'name' => $customer->firstname.' '.$customer->lastname,
-							'document_number' => $card->getCustomer()->getDocumentNumber(),
-							'email' => $customer->email,
-							'address' => array(
-								'street' => $address->address1,
-								'neighborhood' => $address->address2,
-								'zipcode' => $address->postcode,
-								'street_number' => $this->getAddressNumber($address),
-								'complementary' => $address->other
-							),
-							'phone' => array(
-								'ddd' => $ddd,
-								'number' => $phone
-							)
-						)
+						'customer' => $this->getCustomerData($customer, $address, $cart)
 					));
 					$transaction->charge();
 
@@ -425,6 +374,38 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 			$this->errors[] = $this->module->l('An error occured. Please contact the merchant to have more informations');
 			return $this->setTemplate('error.tpl');
 		}
+	}
+
+	private function getCustomerData($customer, $address, $cart) {
+		return array(
+			'name'            => $customer->firstname.' '.$customer->lastname,
+			'document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
+			'email'           => $customer->email,
+			'address'         => array(
+				'street'        => $address->address1,
+				'neighborhood'  => $address->address2,
+				'zipcode'       => $address->postcode,
+				'street_number' => $this->getAddressNumber($address),
+				'complementary' => $address->other
+			),
+			'phone' => $this->getPhoneData($address)
+		);
+	}
+
+	private function getPhoneData($address) {
+
+		$phone = empty($address->phone) ? $address->phone_mobile : $address->phone;
+		$phone = preg_replace('/\D/', '', $phone);
+
+		if(!empty($phone) && Tools::strlen($phone) > 2) {
+			$ddd = Tools::substr($phone, 0, 2);
+			$phone = Tools::substr($phone, 2, Tools::strlen($phone));
+		}
+
+		return array(
+			'ddd'    => $ddd,
+			'number' => $phone
+		);
 	}
 
 	private function createDiscountAmount()
