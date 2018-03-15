@@ -117,64 +117,16 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
                 $address = new Address((int)$cart->id_address_invoice);
 
 				if($integrationMode == 'gateway') {
-					
+
 					if ($payment_way == 'card' && !empty($card_hash)) {
 
 						$responseCalculateInstallments;
 
 						if(Tools::isSubmit('installment') != false && (bool)Configuration::get('PAGARME_INSTALLMENT') === true){
-							
+
 							$responseCalculateInstallments = $this->calculateInstallmentsForOrder($this->context->cart->getOrderTotal()*100);
 						}
 
-						$transaction = new PagarMe_Transaction(array(
-							'capture'      => true,
-							'async'        => false,
-							'amount'       => $this->amountToCapture($responseCalculateInstallments),
-							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
-							'card_hash'    => $card_hash,
-							'installments' => Tools::getValue('installment'),
-							'customer'     => $this->getCustomerData($customer, $address, $cart)
-						));
-						$transaction->charge();
-
-						if ($transaction->getStatus() === 'refused') {
-							throw new PagarMe_Exception(
-								'Houve um problema ao processar o pagamento'
-							);
-						}
-
-						$card = $transaction->getCard();
-						$cardInfo = '<strong> Bandeira : </strong>' . $card->getBrand() . '<strong> Parcelas : </strong>' . $transaction->getInstallments();
-
-						$this->module->validateOrder(
-							$cart->id,
-							$payment_status,
-							$cart->getOrderTotal(),
-							$payment_method_name,
-							NULL,
-							array(
-								'{card_info}' => $cardInfo
-							),
-							$currency_id,
-							false,
-							$secure_key
-						);
-
-						$card_id = $transaction->card->id;
-
-					} else if ($payment_way == 'boleto') {
-
-						$this->createDiscountAmount();
-
-						$transaction = new PagarMe_Transaction(array(
-							'amount' => $cart->getOrderTotal()*100,
-							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
-							'payment_method' => 'boleto',
-							'async' => false,
-							'customer' => $this->getCustomerData($customer, $address, $cart)
-						));
-						$transaction->charge();
 						$this->module->validateOrder(
 							$cart->id,
 							$payment_status,
@@ -186,6 +138,62 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 							false,
 							$secure_key
 						);
+
+						$order_id = Order::getOrderByCartId((int)$cart->id);
+
+						$transaction = new PagarMe_Transaction(array(
+							'capture'      => true,
+							'async'        => false,
+							'amount'       => $this->amountToCapture($responseCalculateInstallments),
+							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
+							'card_hash'    => $card_hash,
+							'installments' => Tools::getValue('installment'),
+							'customer'     => $this->getCustomerData($customer, $address, $cart),
+							'metadata' => array(
+								'order_id' => $order_id
+							)
+						));
+
+						$transaction->charge();
+
+						if ($transaction->getStatus() === 'refused') {
+							throw new PagarMe_Exception(
+								'Houve um problema ao processar o pagamento'
+							);
+						}
+
+						$card_id = $transaction->card->id;
+
+					} else if ($payment_way == 'boleto') {
+
+						$this->createDiscountAmount();
+
+						$this->module->validateOrder(
+							$cart->id,
+							$payment_status,
+							$cart->getOrderTotal(),
+							$payment_method_name,
+							NULL,
+							array(),
+							$currency_id,
+							false,
+							$secure_key
+						);
+
+						$order_id = Order::getOrderByCartId((int)$cart->id);
+
+						$transaction = new PagarMe_Transaction(array(
+							'amount' => $cart->getOrderTotal()*100,
+							'postback_url' => _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback',
+							'payment_method' => 'boleto',
+							'async' => false,
+							'customer' => $this->getCustomerData($customer, $address, $cart),
+							'metadata' => array(
+								'order_id' => $order_id
+							)
+						));
+
+						$transaction->charge();
 
 					}
 				} else if($integrationMode == 'checkout_transparente' && !empty($token)) {
@@ -199,7 +207,24 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 						$capture_amount = $this->amountToCapture($responseCalculateInstallments, $transaction);
 					}
 
-					$transaction->captureAdv($capture_amount);
+					$this->module->validateOrder(
+						$this->context->cart->id,
+						$payment_status,
+						$this->context->cart->getOrderTotal(),
+						'Checkout Pagar.me',
+						NULL,
+						array(),
+						$currency_id,
+						false,
+						$secure_key
+					);
+
+					$order_id = Order::getOrderByCartId((int)$cart->id);
+					$metadata = array(
+						'order_id' => $order_id
+					);
+
+					$transaction->captureAdv($capture_amount, false, $metadata);
 
 					$ct_payment_method = $transaction->payment_method;
 
@@ -213,20 +238,6 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 					}
 
 					$pagarme_status = Configuration::get('PAGARME_DEFAULT_STATUS');
-
-					$this->module->validateOrder(
-						$this->context->cart->id,
-						$payment_status,
-						$this->context->cart->getOrderTotal(),
-						$paymentMethodName,
-						NULL,
-						array(
-							'{card_info}' => $cardInfo
-						),
-						$currency_id,
-						false,
-						$secure_key
-					);
 
 				} else if ($oneClickBuy == true && $payment_way == 'oneclickbuy') {
 
@@ -472,7 +483,7 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
 
 		$totalAmount = $cart->getOrderTotal();
 		$totalAmountFreeShipping = $totalAmount - $shippingAmount;
-		
+
 		$discountAmount = (Configuration::get('PAGARME_DISCOUNT_BOLETO') / 100) * $totalAmountFreeShipping;
 		return number_format($discountAmount, '2', '.', '');
 	}
