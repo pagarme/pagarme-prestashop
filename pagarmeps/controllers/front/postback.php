@@ -76,8 +76,8 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
 		Pagarmeps::addLog('4-PostBack id='.$id.' | current_status='.$current_status, 1, 'info', 'Pagarme', null);
 
 		$order_id = null;
-		if( isset($transaction['metadata']['order_id']) ) {
-			$order_id = $transaction['metadata']['order_id'];
+		if( isset($transaction['metadata']['cart_id']) ) {
+			$order_id = Order::getOrderByCartId($transaction['metadata']['cart_id']);
 		} else {
 			$order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
 		}
