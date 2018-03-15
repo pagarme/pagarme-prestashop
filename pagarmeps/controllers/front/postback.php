@@ -22,7 +22,7 @@
 *  @copyright 2015 Pagar.me
 *  @version   1.0.0
 *  @link      https://pagar.me/
-*  @license  
+*  @license
 */
 
 class PagarmepsPostbackModuleFrontController extends ModuleFrontController
@@ -31,7 +31,7 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
 	 * This class should be use by your Instant Payment
 	 * Notification system to validate the order remotely
 	 */
-	 
+
 	private function loader($className) {
 		//echo 'Trying to load ', $className, ' via ', __METHOD__, "()\n";
 		if(strrpos($className, 'PagarMe_') !== false) {
@@ -44,7 +44,7 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
 			include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
 		}
 	}
-	
+
 	public function __construct($response = array()) {
 		spl_autoload_register(array($this, 'loader'));
 		parent::__construct($response);
@@ -52,7 +52,7 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
 		$this->display_header_javascript = false;
 		$this->display_footer = false;
 	}
-	 
+
 	public function postProcess()
 	{
 		Pagarmeps::addLog('1-PostBack', 1, 'info', 'Pagarme', null);
@@ -63,27 +63,34 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
 			Pagarmeps::addLog('2-PostBack', 1, 'info', 'Pagarme', null);
 			die('This module is not active');
 		}
-			
-			
+
 		if ((Tools::isSubmit('id') == false) || (Tools::isSubmit('current_status') == false)) {
 			Pagarmeps::addLog('3-PostBack', 1, 'info', 'Pagarme', null);
 			die('No ID submited, or no Status');
 		}
-		
+
 		$id = Tools::getValue('id');
 		$current_status = Tools::getValue('current_status');
 		$current_status_id = Pagarmeps::getStatusId($current_status);
+		$transaction = Tools::getValue('transaction');
 		Pagarmeps::addLog('4-PostBack id='.$id.' | current_status='.$current_status, 1, 'info', 'Pagarme', null);
-		
-		$order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
+
+		$order_id = null;
+		if( isset($transaction['metadata']['order_id']) ) {
+			$order_id = $transaction['metadata']['order_id'];
+		} else {
+			$order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
+		}
+
 		Pagarmeps::addLog('5-PostBack order_id='.$order_id, 1, 'info', 'Pagarme', null);
-		
+
 		if($order_id != null) {
 			$order = new Order($order_id);
 			if($order_id != null) {
 				$order->current_state = $current_status_id;
 				$history = new OrderHistory();
 				$history->id_order = (int)$order->id;
+				$history->id_order_state = $current_status_id;
 
 					if($order->save()){
 						$history->addWithemail();
@@ -104,7 +111,7 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
 			Pagarmeps::addLog('6-PostBack: No saved order found for the submited ID', 1, 'info', 'Pagarme', null);
 			die('No saved order found for the submited ID');
 		}
-		
-		
+
+
 	}
 }

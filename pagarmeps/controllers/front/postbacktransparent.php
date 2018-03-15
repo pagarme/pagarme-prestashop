@@ -74,9 +74,16 @@ class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontContr
 		$event = Tools::getValue('event');
 		$old_status = Tools::getValue('old_status');
 		$current_status_id = Pagarmeps::getStatusId($current_status);
+		$transaction = Tools:getValue('transaction');
 		Pagarmeps::addLog('4-PostBackTrans id='.$id.' | old_status='.$old_status.' | current_status='.$current_status.' | event='.$event, 1, 'info', 'Pagarme', null);
 
-		$order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
+		$order_id = null;
+		if( isset($transaction['metadata']['order_id']) ) {
+			$order_id = $transaction['metadata']['order_id'];
+		} else {
+			$order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
+		}
+
 		Pagarmeps::addLog('5-PostBackTrans order_id='.$order_id, 1, 'info', 'Pagarme', null);
 
 		if($order_id != null) {
