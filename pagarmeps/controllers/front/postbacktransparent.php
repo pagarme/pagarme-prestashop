@@ -26,102 +26,112 @@
  */
 class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontController
 {
-	/**
-	 * This class should be use by your Instant Payment
-	 * Notification system to validate the order remotely
-	 */
+    /**
+     * This class should be use by your Instant Payment
+     * Notification system to validate the order remotely
+     */
 
-	private function loader($className) {
-		//echo 'Trying to load ', $className, ' via ', __METHOD__, "()\n";
-		if(strrpos($className, 'PagarMe_') !== false) {
-			$className = Tools::substr($className, 8);
-			//echo 'Trying to load V2 ', $className, ' via ', __METHOD__, "()\n";
-			include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
-		}else if(strrpos($className, 'Pagarmeps') !== false) {
-			include dirname(__FILE__).'/../../classes/'.$className . '.php';
-		} else {
-			include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
-		}
-	}
+    private function loader($className) {
+        //echo 'Trying to load ', $className, ' via ', __METHOD__, "()\n";
+        if(strrpos($className, 'PagarMe_') !== false) {
+            $className = Tools::substr($className, 8);
+            //echo 'Trying to load V2 ', $className, ' via ', __METHOD__, "()\n";
+            include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
+        }else if(strrpos($className, 'Pagarmeps') !== false) {
+            include dirname(__FILE__).'/../../classes/'.$className . '.php';
+        } else {
+            include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
+        }
+    }
 
-	public function __construct($response = array()) {
-		spl_autoload_register(array($this, 'loader'));
-		parent::__construct($response);
-		$this->display_header = false;
-		$this->display_header_javascript = false;
-		$this->display_footer = false;
-	}
+    public function __construct($response = array()) {
+        spl_autoload_register(array($this, 'loader'));
+        parent::__construct($response);
+        $this->display_header = false;
+        $this->display_header_javascript = false;
+        $this->display_footer = false;
+    }
 
-	public function postProcess()
-	{
-		Pagarmeps::addLog('1-PostBackTrans', 1, 'info', 'Pagarme', null);
-		/**
-		 * If the module is not active anymore, no need to process anything.
-		 */
-		if ($this->module->active == false) {
-			Pagarmeps::addLog('2-PostBackTrans', 1, 'info', 'Pagarme', null);
-			die('This module is not active');
-		}
+    public function postProcess()
+    {
+        if ($this->module->active == false) {
+            Pagarmeps::addLog('Postback', 1, 'info', 'Pagarme', null);
+            return header('HTTP/1.1 500 Pagarme is not active');
+        }
 
+        $api_key = Configuration::get('PAGARME_API_KEY');
+        Pagarme::setApiKey($api_key);
 
-		if ((Tools::isSubmit('id') == false) || (Tools::isSubmit('current_status') == false)) {
-			Pagarmeps::addLog('3-PostBackTrans', 1, 'info', 'Pagarme', null);
-			die('No ID submited, or no Status');
-		}
+        $request_body = file_get_contents('php://input');
 
-		$id = Tools::getValue('id');
-		$current_status = Tools::getValue('current_status');
-		$event = Tools::getValue('event');
-		$old_status = Tools::getValue('old_status');
-		$current_status_id = Pagarmeps::getStatusId($current_status);
-		$transaction = Tools::getValue('transaction');
-		Pagarmeps::addLog('4-PostBackTrans id='.$id.' | old_status='.$old_status.' | current_status='.$current_status.' | event='.$event, 1, 'info', 'Pagarme', null);
+        if(!Pagarme::validateRequestSignature($request_body, $_SERVER['HTTP_X_HUB_SIGNATURE'])){
+            Pagarmeps::addLog('Postback: dados de postback inválidos', 1, 'info', 'Pagarme', null);
+            return header('HTTP/1.1 403 Invalid POSTback data');
+        }
 
-		$order_id = null;
-		if( isset($transaction['metadata']['cart_id']) ) {
-			$order_id = Order::getOrderByCartId($transaction['metadata']['cart_id']);
-		} else {
-			$order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
-		}
+        $id = Tools::getValue('id');
+        $current_status = Tools::getValue('current_status');
+        $prestashop_new_order_status= Pagarmeps::getStatusId($current_status);
+        $transaction = Tools::getValue('transaction');
 
-		Pagarmeps::addLog('5-PostBackTrans order_id='.$order_id, 1, 'info', 'Pagarme', null);
+        Pagarmeps::addLog('Postback: transaction id='.$id.' | status:'.$current_status, 1, 'info', 'Pagarme', null);
 
-		if($order_id != null) {
-			$order = new Order($order_id);
-			if($order_id != null) {
-				$order->current_state = $current_status_id;
-				$history = new OrderHistory();
-				$history->id_order = (int)$order->id;
-				$history->changeIdOrderState($current_status_id, (int)$order->id);
-				if($history->addWithemail()){
-					if($order->save()){
-						Pagarmeps::addLog('10-PostBackTrans: Everything is OK', 1, 'info', 'Pagarme', null);
-						die('OK');
-					} else {
-						Pagarmeps::addLog('9-PostBackTrans: Error while saving Order', 1, 'info', 'Pagarme', null);
-					}
-				} else {
-					Pagarmeps::addLog('8-PostBackTrans: Error while updating the order history', 1, 'info', 'Pagarme', null);
-					die('Error while updating the order history');
-				}
-			} else {
-				Pagarmeps::addLog('7-PostBackTrans: No order Object found for the saved ID', 1, 'info', 'Pagarme', null);
-				die('No order Object found for the saved ID');
-			}
-		} else { //for a transparent CheckOut, this cas can happen when the callback URL is call befor the serveur processes the form POST
-			Pagarmeps::addLog('6-PostBackTrans: No saved order found for the submited ID (ID='.$id.' - current_status='.$current_status.')', 1, 'info', 'Pagarme', null);
-			//So we save the current state and the transaction ID for
-			if($current_status != 'authorized'){
-				$pgmTrans = new PagarmepsTransactionClass();
-				$pgmTrans->id_order = 0;
-				$pgmTrans->id_object_pagarme = pSQL($id);
-				$pgmTrans->current_status = pSQL($current_status);
-				if(!$pgmTrans->save()){
-					Pagarmeps::addLog('7-PostBackTrans: Failed Save (id_object_pagarme='.$id.' - current_status='.$current_status.')', 1, 'info', 'Pagarme', null);
-				}
-			}
-		}
+        $order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
+        if( isset($transaction['metadata']['cart_id']) ) {
+            $order_id = Order::getOrderByCartId($transaction['metadata']['cart_id']);
+        }
+
+        Pagarmeps::addLog('Postback: order id='.$order_id, 1, 'info', 'Pagarme', null);
+
+        $order = new Order($order_id);
+
+        if(is_null($order_id) || is_null($order)) {
+            Pagarmeps::addLog('Postback: Order not found', 1, 'info', 'Pagarme', null);
+            return header('HTTP/1.1 400 Order not found');
+        }
+
+        if(!$this->updateOrderStatus($order, $prestashop_new_order_status)) {
+            Pagarmeps::addLog('Postback: Order '. $order->id .' already ' . $current_status, 1, 'info', 'Pagarme', null);
+            return header('HTTP/1.1 200 Order already ' . $current_status);
+        }
+
+        if(!$order->hasInvoice() && $current_status == 'paid') {
+            $order->setInvoice();
+        }
+
+        $this->addOrderHistory($order, $prestashop_new_order_status);
+        Pagarmeps::addLog('Postback: Order ' . $order->id . ' successfully updated to' . $current_status);
 
 
-	}
+        return header('HTTP/1.1 200 Order successfully updated');
+    }
+
+    private function updateOrderStatus($order, $prestashop_new_order_status) {
+
+        if($order->current_state == $prestashop_new_order_status) {
+            return false;
+        }
+
+        $order->current_state = $prestashop_new_order_status;
+
+        if(!$order->save()){
+            Pagarmeps::addLog('Postback: failed to update order', 1, 'info', 'Pagarme', null);
+
+            return false;
+        }
+
+        Pagarmeps::addLog('Postback: order ' . $order->id . ' successfully updated to ' . $current_status, 1, 'info', 'Pagarme', null);
+
+        return true;
+    }
+
+    private function addOrderHistory($order, $prestashop_new_order_status) {
+        $history = new OrderHistory();
+        $history->id_order = (int)$order->id;
+        $history->id_order_state = $prestashop_new_order_status;
+
+        $history->addWithemail();
+        $history->changeIdOrderState($prestashop_new_order_status, (int)$order->id);
+    }
+
 }
