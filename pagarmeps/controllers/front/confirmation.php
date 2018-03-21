@@ -70,7 +70,6 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
         $card_hash = Tools::getValue('card_hash');
         $token = Tools::getValue('token');
         $choosen_card = Tools::getValue('choosen_card');
-        $pagarme_default_status = Configuration::get('PAGARME_DEFAULT_STATUS');
 
         $cart = new Cart((int)$cart_id);
         $customer = new Customer((int)$cart->id_customer);
@@ -213,115 +212,74 @@ class PagarmepsConfirmationModuleFrontController extends ModuleFrontController
         );
 
         $order_id = Order::getOrderByCartId((int) $cart->id);
+
         $order = new Order($order_id);
 
-        if ($order) {
-            $order_payments = $order->getOrderPayments();
+        $this->updateOrderPayments($order, $transaction);
 
-            foreach ($order_payments as $order_payment) {
-                $order_payment->transaction_id = $transaction->getId();
-
-                if ($transaction->getPaymentMethod() == "credit_card") {
-
-                    $card = $transaction->getCard();
-                    $order_payment->card_number = $card->getFirstDigits() . '****' . $card->getLastDigits();
-                    $order_payment->card_brand 	= $card->getBrand();
-                    $order_payment->card_holder = $card->getHolderName();
-                    $order_payment->installments = $transaction->getInstallments();
-                }
-
-                $order_payment->save();
-            }
-        }
-
-        Pagarmeps::addLog('11-Confirm-final Transaction.Status='.$transaction->status, 1, 'info', 'Pagarme', $order_id);
-
-        $statusId = Pagarmeps::getStatusId($transaction->status);
-
-        Pagarmeps::addLog('11a-Confirm-final statusId='.$statusId, 1, 'info', 'Pagarme', $order_id);
+        $prestashop_paid_status = Pagarmeps::getStatusId('paid');
+        $prestashop_order_status = Pagarmeps::getStatusId($transaction->status);
 
         //Generate Invoice if paid
-        $authorized_status_id = Configuration::get('PAGARME_DEFAULT_AUTHORIZED');
-        $paid_status_id = Configuration::get('PAGARME_DEFAULT_PAID');
-
-        Pagarmeps::addLog('11e-Confirm-final authorized_status_id='.$authorized_status_id.' | paid_status_id='.$paid_status_id, 1, 'info', 'Pagarme', $order_id);
-
-        if( !$order->hasInvoice() && ($statusId == $authorized_status_id || $statusId == $paid_status_id) ){
-            Pagarmeps::addLog('11f-Confirm-final statusId='.$statusId, 1, 'info', 'Pagarme', $order_id);
+        if( !$order->hasInvoice() && ($prestashop_paid_status == $prestashop_order_status) ){
+            Pagarmeps::addLog('Generated invoice for order ' . $order->id, 1, 'info', 'Pagarme', $order_id);
             $order->setInvoice(true);
         }
 
-        Pagarmeps::addLog('12-Confirm-STEP: A', 1, 'info', 'Pagarme', null);
-
         $order->payment = $payment_method_name;
 
-        Pagarmeps::addLog('12-Confirm-STEP: B', 1, 'info', 'Pagarme', null);
-        //With the tranparent checkout, the callback may have already store a state update
-        $pgmTrans = PagarmepsTransactionClass::getByTransactionId($transaction->id);
-        Pagarmeps::addLog('12-Confirm-STEP: C', 1, 'info', 'Pagarme', null);
-
-        if($pgmTrans != null) {
-            Pagarmeps::addLog('13-Confirm: Existing transaction found (Transaction ID = '.$transaction->id.')', 1, 'info', 'Pagarme', null);
-            // this transaction have been already called back
-            if( !empty($pgmTrans->current_status) ) {
-                $statusId = Pagarmeps::getStatusId($pgmTrans->current_status);
-
-                Pagarmeps::addLog('131-Confirm: Existing transaction found pgmTrans.current_STATUS='.$pgmTrans->current_status.' | $statusId='.$statusId.' | $order->current_state'.$order->current_state, 1, 'info', 'Pagarme', null);
-
-                if( $order->current_state != $statusId ) {
-                    $order->current_state = $statusId;
-                    $history = new OrderHistory();
-                    $history->id_order = (int) $order->id;
-                    $history->id_order_state = $statusId;
-                    $history->changeIdOrderState($statusId, (int) $order->id);
-
-                    if( !$history->add() ) {
-                        Pagarmeps::addLog('132-Confirm: Error while updating the order history', 1, 'info', 'Pagarme', null);
-                    }
-                }
-            }
-
-        } else {
-            Pagarmeps::addLog('133-Confirm: NO transaction found (Transaction ID = '.$transaction->id.')', 1, 'info', 'Pagarme', null);
-            $pgmTrans = new PagarmepsTransactionClass();
-        }
-
-        Pagarmeps::addLog('12-Confirm-STEP: D', 1, 'info', 'Pagarme', null);
-
         if( !$order->save() ) {
-            Pagarmeps::addLog('14-Confirm-final-NO-orderSave', 1, 'info', 'Pagarme', $order_id);
+            Pagarmeps::addLog('Cannot save order', 1, 'info', 'Pagarme', $order_id);
         }
 
-        Pagarmeps::addLog('12-Confirm-STEP: E', 1, 'info', 'Pagarme', null);
+        $pgmTrans = new PagarmepsTransactionClass();
 
         $pgmTrans->id_order = (int)$order_id;
         $pgmTrans->id_object_pagarme = pSQL($transaction->id);
-        $pgmTrans->current_status = '';
+        $pgmTrans->current_status = $transaction->current_status;
 
         if( !$pgmTrans->save() ) {
-            Pagarmeps::addLog('15-Confirm-final-NO-pgmTransSave id_object_pagarme='.$transaction->id, 1, 'info', 'Pagarme', $order_id);
+            Pagarmeps::addLog('Cannot save the transaction on database ', 1, 'info', 'Pagarme', $order_id);
         }
 
-        //Save card
-        if( $card_id != null && !empty($card_id) ) {
-            $pgmCard = new PagarmepsCardClass();
-
-            $pgmCard->id_object_card_pagarme = pSQL($card_id);
-            $pgmCard->id_client = (int)$cart->id_customer;
-
-            if( !$pgmCard->save() ) {
-                Pagarmeps::addLog('16-Confirm-final-NO-pgmCardSave id_object_card_pagarme='.$card_id, 1, 'info', 'Pagarme', $order_id);
-            }
+        if($choosen_card) {
+            $this->savePagarMeCard($choosen_card, $cart);
         }
 
-        /**
-         * The order has been placed so we redirect the customer on the confirmation page.
-         */
-        $module_id = $this->module->id;
         return Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key);
 
     } 
 
+    private function updateOrderPayments($order, $transaction) {
+        $order_payments = $order->getOrderPayments();
+
+        foreach ($order_payments as $order_payment) {
+            $order_payment->transaction_id = $transaction->getId();
+
+            if ($transaction->getPaymentMethod() == "credit_card") {
+
+                $card = $transaction->getCard();
+                $order_payment->card_number = $card->getFirstDigits() . '****' . $card->getLastDigits();
+                $order_payment->card_brand 	= $card->getBrand();
+                $order_payment->card_holder = $card->getHolderName();
+                $order_payment->installments = $transaction->getInstallments();
+            }
+
+            $order_payment->save();
+        }
+    }
+
+    private function savePagarMeCard($choosen_card, $cart) {
+        $pgmCard = new PagarmepsCardClass();
+
+        $pgmCard->id_object_card_pagarme = pSQL($choosen_card);
+        $pgmCard->id_client = (int)$cart->id_customer;
+
+        if( !$pgmCard->save() ) {
+            Pagarmeps::addLog('Card saved '. $choosen_card, 1, 'info', 'Pagarme', $order_id);
+        }
+
+    }
 
     private function getCustomerData($cart) {
         $customer = new Customer((int)$cart->id_customer);
