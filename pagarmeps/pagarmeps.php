@@ -49,7 +49,7 @@ class Pagarmeps extends PaymentModule
     {
         $this->name = 'pagarmeps';
         $this->tab = 'payments_gateways';
-        $this->version = '1.2.0';
+        $this->version = '1.3.0';
         $this->author = 'Pagar.me';
         $this->need_instance = 0;
 
