@@ -1,57 +1,8 @@
 <?php
-/**
- * 2007-2015 PrestaShop
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@prestashop.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
- * versions in the future. If you wish to customize PrestaShop for your
- * needs please refer to http://www.prestashop.com for more information.
- *
- *  @author    Pagar.me
- *  @copyright 2015 Pagar.me
- *  @version   1.0.0
- *  @link      https://pagar.me/
- *  @license
- */
-class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontController
+require_once('pagarmeOrder.php');
+
+class PagarmepsPostbacktransparentModuleFrontController extends PagarmepsOrderModuleFrontController
 {
-    /**
-     * This class should be use by your Instant Payment
-     * Notification system to validate the order remotely
-     */
-
-    private function loader($className) {
-        //echo 'Trying to load ', $className, ' via ', __METHOD__, "()\n";
-        if(strrpos($className, 'PagarMe_') !== false) {
-            $className = Tools::substr($className, 8);
-            //echo 'Trying to load V2 ', $className, ' via ', __METHOD__, "()\n";
-            include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
-        }else if(strrpos($className, 'Pagarmeps') !== false) {
-            include dirname(__FILE__).'/../../classes/'.$className . '.php';
-        } else {
-            include dirname(__FILE__).'/../../lib/pagarme/'.$className . '.php';
-        }
-    }
-
-    public function __construct($response = array()) {
-        spl_autoload_register(array($this, 'loader'));
-        parent::__construct($response);
-        $this->display_header = false;
-        $this->display_header_javascript = false;
-        $this->display_footer = false;
-    }
-
     public function postProcess()
     {
         if ($this->module->active == false) {
@@ -76,6 +27,11 @@ class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontContr
 
         Pagarmeps::addLog('Postback: transaction id='.$id.' | status:'.$current_status, 1, 'info', 'Pagarme', null);
 
+        if($current_status == 'authorized') {
+            return header('HTTP/1.1 200 Order already authorized');
+        }
+
+
         $order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
         if( isset($transaction['metadata']['cart_id']) ) {
             $order_id = Order::getOrderByCartId($transaction['metadata']['cart_id']);
@@ -99,39 +55,8 @@ class PagarmepsPostbacktransparentModuleFrontController extends ModuleFrontContr
             $order->setInvoice();
         }
 
-        $this->addOrderHistory($order, $prestashop_new_order_status);
         Pagarmeps::addLog('Postback: Order ' . $order->id . ' successfully updated to' . $current_status);
-
 
         return header('HTTP/1.1 200 Order successfully updated');
     }
-
-    private function updateOrderStatus($order, $prestashop_new_order_status) {
-
-        if($order->current_state == $prestashop_new_order_status) {
-            return false;
-        }
-
-        $order->current_state = $prestashop_new_order_status;
-
-        if(!$order->save()){
-            Pagarmeps::addLog('Postback: failed to update order', 1, 'info', 'Pagarme', null);
-
-            return false;
-        }
-
-        Pagarmeps::addLog('Postback: order ' . $order->id . ' successfully updated to ' . $current_status, 1, 'info', 'Pagarme', null);
-
-        return true;
-    }
-
-    private function addOrderHistory($order, $prestashop_new_order_status) {
-        $history = new OrderHistory();
-        $history->id_order = (int)$order->id;
-        $history->id_order_state = $prestashop_new_order_status;
-
-        $history->addWithemail();
-        $history->changeIdOrderState($prestashop_new_order_status, (int)$order->id);
-    }
-
 }
