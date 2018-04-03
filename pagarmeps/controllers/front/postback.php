@@ -1,44 +1,8 @@
 <?php
-/**
- * 2007-2015 PrestaShop
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@prestashop.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
- * versions in the future. If you wish to customize PrestaShop for your
- * needs please refer to http://www.prestashop.com for more information.
- *
- *  @author    Pagar.me
- *  @copyright 2015 Pagar.me
- *  @version   1.0.0
- *  @link      https://pagar.me/
- *  @license
- */
+require_once('pagarmeOrder.php');
 
-class PagarmepsPostbackModuleFrontController extends ModuleFrontController
+class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontController
 {
-    private function loader() {
-        include '../../lib/pagarme/PagarMe.php';
-    }
-
-    public function __construct($response = array()) {
-        spl_autoload_register(array($this, 'loader'));
-        parent::__construct($response);
-        $this->display_header = false;
-        $this->display_header_javascript = false;
-        $this->display_footer = false;
-    }
-
     public function postProcess()
     {
         if ($this->module->active == false) {
@@ -60,6 +24,10 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
         $current_status = Tools::getValue('current_status');
         $prestashop_new_order_status = Pagarmeps::getStatusId($current_status);
         $transaction = Tools::getValue('transaction');
+
+        if($current_status == 'authorized') {
+            return header('HTTP/1.1 200 Order already ' . $current_status);
+        }
 
         Pagarmeps::addLog('Postback: transaction id='.$id.' | status:'.$current_status, 1, 'info', 'Pagarme', null);
 
@@ -86,38 +54,8 @@ class PagarmepsPostbackModuleFrontController extends ModuleFrontController
             $order->setInvoice();
         }
 
-        $this->addOrderHistory($order, $prestashop_new_order_status);
-
         Pagarmeps::addLog('Postback: Order ' . $order->id . ' successfully updated to' . $current_status);
 
         return header('HTTP/1.1 200 Order successfully updated');
-    }
-
-    private function updateOrderStatus($order, $prestashop_new_order_status) {
-
-        if($order->current_state == $prestashop_new_order_status) {
-            return false;
-        }
-
-        $order->current_state = $prestashop_new_order_status;
-
-        if(!$order->save()){
-            Pagarmeps::addLog('Postback: failed to update order', 1, 'info', 'Pagarme', null);
-
-            return false;
-        }
-
-        Pagarmeps::addLog('Postback: order ' . $order->id . ' successfully updated to ' . $current_status, 1, 'info', 'Pagarme', null);
-
-        return true;
-    }
-
-    private function addOrderHistory($order, $prestashop_new_order_status) {
-        $history = new OrderHistory();
-        $history->id_order = (int)$order->id;
-        $history->id_order_state = $prestashop_new_order_status;
-
-        $history->addWithemail();
-        $history->changeIdOrderState($prestashop_new_order_status, (int)$order->id);
     }
 }
