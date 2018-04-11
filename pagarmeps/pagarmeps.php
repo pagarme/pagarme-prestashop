@@ -215,7 +215,7 @@ class Pagarmeps extends PaymentModule
         $order_state->color = '#EE6C00';
         $order_state->unremovable = false;
         $order_state->hidden = false;
-        $order_state->logable = true;
+        $order_state->logable = false;
         $order_state->delivery = false;
         $order_state->shipped = false;
         $order_state->paid = false;
