@@ -42,10 +42,23 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             return $this->setTemplate('error.tpl');
         }
 
+        $prestashop_order_status = ($posted_data['payment_way'] == 'boleto')? Pagarmeps::getStatusId("waiting_payment") : Pagarmeps::getStatusId("processing");
+        $payment_method_name = $this->getPaymentMethodName($posted_data);
+
+        $this->module->validateOrder(
+            $cart->id,
+            $prestashop_order_status,
+            $cart->getOrderTotal(),
+            $payment_method_name,
+            null,
+            array(),
+            $currency_id,
+            false,
+            $posted_data['secure_key']
+        );
+
         $api_key = Configuration::get('PAGARME_API_KEY');
         Pagarme::setApiKey($api_key);
-
-        $payment_method_name = $this->getPaymentMethodName($posted_data);
 
         if($integrationMode == 'gateway' || $posted_data['payment_way'] == 'oneclickbuy') {
             $transaction_data = $this->generateTransactionData($posted_data);
@@ -93,20 +106,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             return $this->setTemplate('error.tpl');
         }
 
-        $prestashop_order_status = Pagarmeps::getStatusId($transaction->status);
-
-        $this->module->validateOrder(
-            $cart->id,
-            $prestashop_order_status,
-            $cart->getOrderTotal(),
-            $payment_method_name,
-            null,
-            array(),
-            $currency_id,
-            false,
-            $posted_data['secure_key']
-        );
-
         $order_id = Order::getOrderByCartId((int) $cart->id);
 
         $order = new Order($order_id);
@@ -142,20 +141,20 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
 
         return Tools::redirect('index.php?controller=order-confirmation&id_cart='.$cart->id.'&id_module='.$this->module->id.'&id_order='.$this->module->currentOrder.'&key='.$customer->secure_key);
 
-    } 
+    }
 
     private function generateTransactionAmount($data, $transaction = null) {
         $cart = new Cart((int)$data['cart_id']);
 
         if (
-            (isset($transaction) && $transaction->getPaymentMethod() == 'boleto') || 
+            (isset($transaction) && $transaction->getPaymentMethod() == 'boleto') ||
             $data['payment_way'] == 'boleto'
         ) {
             $this->createDiscountAmount();
             Pagarmeps::addLog('Desconto de boleto', 1, 'info', 'Pagarme', $null);
 
             return $this->context->cart->getOrderTotal() * 100;
-        } 
+        }
 
         $calculateInstallments = $this->calculateInstallmentsForOrder($cart->getOrderTotal()*100);
 
@@ -169,7 +168,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         $capture_data = array(
             'amount' => $this->generateTransactionAmount($data, $transaction),
             'metadata' => array (
-                'cart_id' => $cart->id 
+                'cart_id' => $cart->id
             )
         );
 
@@ -183,6 +182,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         if($data['payment_way'] == 'card' || $data['payment_way'] == 'oneclickbuy') {
             $transaction_data['payment_method'] = 'credit_card';
             $transaction_data['installments'] = Tools::getValue('installment') ? Tools::getValue('installment') : 1;
+            $transaction_data['async'] = true;
 
             if($data['card_hash']) {
                 $transaction_data['card_hash'] = $data['card_hash'];
@@ -198,7 +198,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         }
 
         $transaction_data['amount'] = $this->generateTransactionAmount($data);
-        $transaction_data['async'] = false;
         $transaction_data['postback_url'] = _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback';
 
         $transaction_data['customer'] = $this->getCustomerData($cart);

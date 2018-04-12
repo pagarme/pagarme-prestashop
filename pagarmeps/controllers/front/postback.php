@@ -22,7 +22,6 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
 
         $id = Tools::getValue('id');
         $current_status = Tools::getValue('current_status');
-        $prestashop_new_order_status = Pagarmeps::getStatusId($current_status);
         $transaction = Tools::getValue('transaction');
 
         if($current_status == 'authorized') {
@@ -45,7 +44,7 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
             return header('HTTP/1.1 400 Order not found');
         }
 
-        if(!$this->updateOrderStatus($order, $prestashop_new_order_status)) {
+        if(!$this->updateOrderStatus($order, $current_status, $transaction)) {
             Pagarmeps::addLog('Postback: Order '. $order->id .' already ' . $current_status, 1, 'info', 'Pagarme', null);
             return header('HTTP/1.1 200 Order already ' . $current_status);
         }

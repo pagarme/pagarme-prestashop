@@ -1,7 +1,7 @@
 <?php
 
 class PagarmepsOrderModuleFrontController extends ModuleFrontController
-{ 
+{
     private function loader() {
         include '../../lib/pagarme/PagarMe.php';
     }
@@ -14,8 +14,10 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
         $this->display_footer = true;
     }
 
-    public function updateOrderStatus($order, $prestashop_new_order_status) {
+    public function updateOrderStatus($order, $current_status, $transaction) {
+        $prestashop_new_order_status = Pagarmeps::getStatusId($current_status);
 
+        Pagarmeps::addLog('Postback: order ' . $order->id . ' current state: ' . $order->current_state . ' new status: ' . $prestashop_new_order_status, 1, 'info', 'Pagarme', null);
         if($order->current_state == $prestashop_new_order_status) {
             return false;
         }
@@ -30,7 +32,12 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
 
         $this->addOrderHistory($order, $prestashop_new_order_status);
 
-        Pagarmeps::addLog('Postback: order ' . $order->id . ' successfully updated to ' . $current_status, 1, 'info', 'Pagarme', null);
+        if( $current_status === "paid" &&
+            !$order->addOrderPayment($transaction['paid_amount']/100, null, $transaction['id'])
+          ) {
+          Pagarmeps::addLog('Postback: failed to add order payment', 1, 'info', 'Pagarme', null);
+          return false;
+        }
 
         return true;
     }

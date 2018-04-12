@@ -184,7 +184,7 @@ class Pagarmeps extends PaymentModule
         $order_state->color = '#EE6C00';
         $order_state->unremovable = false;
         $order_state->hidden = false;
-        $order_state->logable = true;
+        $order_state->logable = false;
         $order_state->delivery = false;
         $order_state->shipped = false;
         $order_state->paid = false;
@@ -244,7 +244,7 @@ class Pagarmeps extends PaymentModule
         $order_state->color = '#FFB83C';
         $order_state->unremovable = false;
         $order_state->hidden = false;
-        $order_state->logable = true;
+        $order_state->logable = false;
         $order_state->delivery = false;
         $order_state->shipped = false;
         $order_state->paid = true;
@@ -304,7 +304,7 @@ class Pagarmeps extends PaymentModule
         $order_state->color = '#BC69B1';
         $order_state->unremovable = false;
         $order_state->hidden = false;
-        $order_state->logable = true;
+        $order_state->logable = false;
         $order_state->delivery = false;
         $order_state->shipped = false;
         $order_state->paid = false;
@@ -333,7 +333,7 @@ class Pagarmeps extends PaymentModule
         $order_state->color = '#FF21E1';
         $order_state->unremovable = false;
         $order_state->hidden = false;
-        $order_state->logable = true;
+        $order_state->logable = false;
         $order_state->delivery = false;
         $order_state->shipped = false;
         $order_state->paid = false;
@@ -365,7 +365,7 @@ class Pagarmeps extends PaymentModule
         $order_state->color = '#F21D27';
         $order_state->unremovable = false;
         $order_state->hidden = false;
-        $order_state->logable = true;
+        $order_state->logable = false;
         $order_state->delivery = false;
         $order_state->shipped = false;
         $order_state->paid = false;
