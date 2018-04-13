@@ -182,7 +182,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         if($data['payment_way'] == 'card' || $data['payment_way'] == 'oneclickbuy') {
             $transaction_data['payment_method'] = 'credit_card';
             $transaction_data['installments'] = Tools::getValue('installment') ? Tools::getValue('installment') : 1;
-            $transaction_data['async'] = true;
 
             if($data['card_hash']) {
                 $transaction_data['card_hash'] = $data['card_hash'];
@@ -198,6 +197,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         }
 
         $transaction_data['amount'] = $this->generateTransactionAmount($data);
+        $transaction_data['async'] = false;
         $transaction_data['postback_url'] = _PS_BASE_URL_ .__PS_BASE_URI__.'module/pagarmeps/postback';
 
         $transaction_data['customer'] = $this->getCustomerData($cart);
