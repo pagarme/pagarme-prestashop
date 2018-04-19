@@ -15,6 +15,7 @@ class RestClient
 		$this->headers = array(
 			'Accept: application/json',
 			'Content-Type: application/json',
+			'User-Agent: Prestashop '._PS_VERSION_
 		);
 
 		if(!$params["url"]) {
