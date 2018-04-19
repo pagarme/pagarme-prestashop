@@ -15,7 +15,7 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
 
         $request_body = file_get_contents('php://input');
 
-        if(!Pagarme::validateRequestSignature($request_body, $_SERVER['HTTP_X_HUB_SIGNATURE'])){
+        if(!Pagarme::validateRequestSignature($request_body, $_SERVER['HTTP_X_HUB_SIGNATURE'])) {
             Pagarmeps::addLog('Postback: dados de postback inválidos', 1, 'info', 'Pagarme', null);
             return header('HTTP/1.1 403 Dados de postback inválidos');
         }
@@ -31,8 +31,8 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
         Pagarmeps::addLog('Postback: transaction id='.$id.' | status:'.$current_status, 1, 'info', 'Pagarme', null);
 
         $order_id = PagarmepsTransactionClass::getOrderIdByTransactionId($id);
-        if( isset($transaction['metadata']['cart_id']) ) {
-            $order_id = Order::getOrderByCartId($transaction['metadata']['cart_id']);
+        if( isset($transaction['metadata']['order_id']) ) {
+            $order_id = $transaction['metadata']['order_id'];
         }
 
         Pagarmeps::addLog('Postback: order id='.$order_id, 1, 'info', 'Pagarme', null);
@@ -44,9 +44,9 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
             return header('HTTP/1.1 400 Order not found');
         }
 
-        if(!$this->updateOrderStatus($order, $current_status, $transaction)) {
-            Pagarmeps::addLog('Postback: Order '. $order->id .' already ' . $current_status, 1, 'info', 'Pagarme', null);
-            return header('HTTP/1.1 200 Order already ' . $current_status);
+        if(!$this->updateOrderStatus($order, $transaction)) {
+            Pagarmeps::addLog('Order ' . $order->id . ': postback failed', 1, 'info', 'Pagarme', null);
+            return header('HTTP/1.1 200 Order update failed');
         }
 
         if(!$order->hasInvoice() && $current_status == 'paid') {
