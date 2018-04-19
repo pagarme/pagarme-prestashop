@@ -57,11 +57,13 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             $posted_data['secure_key']
         );
 
+        $order_id = Order::getOrderByCartId((int) $cart->id);
+
         $api_key = Configuration::get('PAGARME_API_KEY');
         Pagarme::setApiKey($api_key);
 
         if($integrationMode == 'gateway' || $posted_data['payment_way'] == 'oneclickbuy') {
-            $transaction_data = $this->generateTransactionData($posted_data);
+            $transaction_data = $this->generateTransactionData($posted_data, $order_id);
 
             $transaction = new PagarMe_Transaction($transaction_data);
 
@@ -80,7 +82,8 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             }
 
         } else if( $integrationMode == 'checkout_transparente' && $posted_data['token'] ) {
-            $capture_data = $this->generateCaptureData($posted_data);
+            $capture_data = $this->generateCaptureData($posted_data, $order_id);
+
             $transaction = PagarMe_Transaction::findById($posted_data['token']);
 
             try {
@@ -105,8 +108,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         if( count($this->errors) > 0 ) {
             return $this->setTemplate('error.tpl');
         }
-
-        $order_id = Order::getOrderByCartId((int) $cart->id);
 
         $order = new Order($order_id);
 
@@ -161,22 +162,21 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         return $this->amountToCapture($calculateInstallments, $transaction);
     }
 
-    private function generateCaptureData($data) {
+    private function generateCaptureData($data, $order_id) {
         $cart = new Cart((int)$data['cart_id']);
         $transaction = PagarMe_Transaction::findById($data['token']);
 
         $capture_data = array(
             'amount' => $this->generateTransactionAmount($data, $transaction),
             'metadata' => array (
-                'cart_id' => $cart->id
+                'order_id' => $order_id
             )
         );
 
         return $capture_data;
-
     }
 
-    private function generateTransactionData($data) {
+    private function generateTransactionData($data, $order_id) {
         $cart = new Cart((int)$data['cart_id']);
 
         if($data['payment_way'] == 'card' || $data['payment_way'] == 'oneclickbuy') {
@@ -202,7 +202,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
 
         $transaction_data['customer'] = $this->getCustomerData($cart);
         $transaction_data['metadata'] = array(
-            'cart_id' => $cart->id
+            'order_id' => $order_id
         );
 
         return $transaction_data;
