@@ -882,18 +882,6 @@ class Pagarmeps extends PaymentModule
                 }
             }
 
-            $addressNumber = explode(',', $address->address1);
-
-            if (isset($addressNumber[1])) {
-                if (isset($addressNumber[2])) {
-                    $addressComplement = $addressNumber[2];
-                } else {
-                    $addressComplement = null;
-                }
-
-                $addressNumber = $addressNumber[1];
-            }
-
             $this->context->smarty->assign(array(
                 'cart_id' => $cart->id,
                 'total_order' => $total_order,
@@ -905,14 +893,14 @@ class Pagarmeps extends PaymentModule
                 'customer_name' => $customer->firstname.' '.$customer->lastname,
                 'customer_email' => $customer->email,
                 'address_street' => $address->address1,
-                'address_street_number' => filter_var($addressNumber, FILTER_SANITIZE_NUMBER_INT),
-                'address_complementary' => ($address->other) ? $address->other : $addressComplement,
+                'address_street_number' => Pagarmeps::getAddressNumber($address),
+                'address_complementary' => Pagarmeps::getAddressComplementary($address),
                 'address_neighborhood' => $address->address2,
                 'address_city' => $address->city,
                 'address_state' => $state->name,
                 'address_zipcode' => $address->postcode,
                 'phone_ddd' => $ddd,
-                'phone_number' => $phone,
+                'phone_number' => preg_replace('/\D/', '', $phone),
                 'customer_document_number' => Pagarmeps::getCustomerCPFouCNPJ($address, (int)$cart->id_customer),
                 'max_installments' => $max_installments,
                 'interest_rate' => $interest_rate,
@@ -1167,56 +1155,86 @@ class Pagarmeps extends PaymentModule
     */
     public static function getCustomerCPFouCNPJ($address, $id_customer)
     {
-        try {
-            if (isset($address->cpf_cnpj)) {
-                if (count(str_replace(array('-','.'), '', $address->cpf_cnpj)) === 11) {
-                    return  $address->cpf_cnpj;
-                }
+        $customer = new Customer($id_customer);
 
-                return $address->cpf_cnpj;
-            }
-
-            if (file_exists(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php')) {
-                include_once(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php');
-            }
-
-            if (file_exists(_PS_MODULE_DIR_.'cpfmodule/cpfmodule.php')) {
-                include_once(_PS_MODULE_DIR_.'cpfmodule/cpfmodule.php');
-            }
-
-            if (file_exists(_PS_MODULE_DIR_.'fkcustomers/fkcustomers.php')) {
-
-                $customer = new Customer($id_customer);
-
-                return $customer->cpf_cnpj;
-            }
-
-            if (method_exists('BrazilianRegister', 'getByCustomerId') && method_exists('Djtalbrazilianregister', 'mascaraString')) {
-                $documentNumber = BrazilianRegister::getByCustomerId($id_customer);
-
-                if ($documentNumber['cpf']) {
-                    return $documentNumber['cpf'];
-                }
-
-                return $documentNumber['cnpj'];
-            }
-
-            if ( method_exists('cpfmodule', 'getDoc') ) {
-              $documentNumber = new cpfmodule();
-
-              $documentNumber = $documentNumber->getDoc($id_customer);
-
-              if($documentNumber->number){
-                return $documentNumber->number;
-              }
-
-            }
-
-            return '';
-
-        } catch (Exception $e) {
-            return null;
+        if (isset($address->cpf_cnpj)) {
+            return $address->cpf_cnpj;
         }
+
+        if (isset($customer->cpf_cnpj)) {
+            return $customer->cpf_cnpj;
+        }
+
+        if (file_exists(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php')) {
+            include_once(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php');
+
+            $documentNumber = BrazilianRegister::getByCustomerId($id_customer);
+
+            if ($documentNumber['cpf']) {
+                return $documentNumber['cpf'];
+            }
+
+            return $documentNumber['cnpj'];
+        }
+
+        if (file_exists(_PS_MODULE_DIR_.'cpfmodule/cpfmodule.php')) {
+            include_once(_PS_MODULE_DIR_.'cpfmodule/cpfmodule.php');
+
+            $documentNumber = new cpfmodule();
+
+            $documentNumber = $documentNumber->getDoc($id_customer);
+
+            if($documentNumber->number) {
+                return $documentNumber->number;
+            }
+        }
+
+        return '';
+    }
+
+    public static function getAddressNumber($address)
+    {
+        if ($address->numend) {
+            return $address->numend;
+        }
+
+        if ($address->numero) {
+            return $address->numero;
+        }
+
+        $addressNumber = filter_var($address->address1, FILTER_SANITIZE_NUMBER_INT);
+        if ($addressNumber) {
+            return $addressNumber;
+        }
+
+        return '';
+    }
+
+    public static function getAddressComplementary($address)
+    {
+        if ($address->compl) {
+            return $address->compl;
+        }
+
+        if ($address->complemento) {
+            return $address->complemento;
+        }
+
+        if ($address->other) {
+            return $address->other;
+        }
+
+        if ($address->complementary) {
+            return $address->complementary;
+        }
+
+        $separatedAddress = explode(',', $address->address1);
+
+        if(isset($separatedAddress[2])) {
+            return $separatedAddress[2];
+        }
+
+        return 'Sem complemento';
     }
 
     public static function mask($val, $mask)

@@ -252,22 +252,12 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
                 'street'        => $address->address1,
                 'neighborhood'  => $address->address2,
                 'zipcode'       => $address->postcode,
-                'street_number' => $this->getAddressNumber($address),
-                'complementary' => $address->other
+                'street_number' => Pagarmeps::getAddressNumber($address),
+                'complementary' => Pagarmeps::getAddressComplementary($address)
             ),
             'phone' => $this->getPhoneData($address)
         );
     }
-
-    private function getAddressNumber($address)
-    {
-        $addressNumber = filter_var($address->address1, FILTER_SANITIZE_NUMBER_INT);
-        if ($addressNumber) {
-            return $addressNumber;
-        }
-        return 10;
-    }
-
 
     private function getPhoneData($address) {
 
