@@ -239,7 +239,7 @@ class Pagarmeps extends PaymentModule
         //AUTHORIZED
         $order_state = new OrderState();
         $order_state->invoice = false;
-        $order_state->send_email = true;
+        $order_state->send_email = false;
         $order_state->module_name = $this->name;
         $order_state->color = '#FFB83C';
         $order_state->unremovable = false;
