@@ -1074,25 +1074,11 @@ class Pagarmeps extends PaymentModule
 
     public static function getStatusId($state)
     {
-        $idStatus = Configuration::get('PAGARME_DEFAULT_STATUS');
-        //processing, waiting_payment, authorized, paid, pending_refund, refunded, refused
-
-        if ($state == 'processing') {
-            $idStatus = Configuration::get('PAGARME_DEFAULT_PROCESSING');
-        } elseif ($state == 'waiting_payment') {
-            $idStatus = Configuration::get('PAGARME_DEFAULT_WAITING_PAYMENT');
-        } elseif ($state == 'authorized') {
-            $idStatus = Configuration::get('PAGARME_DEFAULT_AUTHORIZED');
-        } elseif ($state == 'paid') {
-            $idStatus = Configuration::get('PAGARME_DEFAULT_PAID');
-        } elseif ($state == 'pending_refund') {
-            $idStatus = Configuration::get('PAGARME_DEFAULT_PENDING_REFUND');
-        } elseif ($state == 'refunded') {
-            $idStatus = Configuration::get('PAGARME_DEFAULT_REFUNDED');
-        } elseif ($state == 'refused') {
-            $idStatus = Configuration::get('PAGARME_DEFAULT_REFUSED');
+        if(Configuration::get('PAGARME_DEFAULT_'.strtoupper($state))) {
+            return Configuration::get('PAGARME_DEFAULT_'.strtoupper($state));
         }
-        return $idStatus;
+
+        return Configuration::get('PAGARME_DEFAULT_STATUS');
     }
 
     public static function getInstallmentOptions($amount)
