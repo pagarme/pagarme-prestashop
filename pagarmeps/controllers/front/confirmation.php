@@ -42,7 +42,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             return $this->setTemplate('error.tpl');
         }
 
-        $prestashop_order_status = ($posted_data['payment_way'] == 'boleto')? Pagarmeps::getStatusId("waiting_payment") : Pagarmeps::getStatusId("processing");
+        $prestashop_order_status = ($posted_data['payment_way'] == 'boleto') ? Pagarmeps::getStatusId("waiting_payment") : Pagarmeps::getStatusId("processing");
         $payment_method_name = $this->getPaymentMethodName($posted_data);
 
         $this->module->validateOrder(
@@ -152,7 +152,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             $data['payment_way'] == 'boleto'
         ) {
             $this->createDiscountAmount();
-            Pagarmeps::addLog('Desconto de boleto', 1, 'info', 'Pagarme', $null);
+            Pagarmeps::addLog('Desconto de boleto', 1, 'info', 'Pagarme', null);
 
             return $this->context->cart->getOrderTotal() * 100;
         }
@@ -163,7 +163,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
     }
 
     private function generateCaptureData($data, $order_id) {
-        $cart = new Cart((int)$data['cart_id']);
         $transaction = PagarMe_Transaction::findById($data['token']);
 
         $capture_data = array(
