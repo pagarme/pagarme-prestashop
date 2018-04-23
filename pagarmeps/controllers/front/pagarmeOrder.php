@@ -20,14 +20,14 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
 
         Pagarmeps::addLog('Postback: order ' . $order->id . ' current state: ' . $order->current_state . ' new status: ' . $prestashop_new_order_status, 1, 'info', 'Pagarme', null);
         if($order->current_state == $prestashop_new_order_status) {
-            Pagarmeps::addLog('Order ' . $order->id . ': order already ' . $current_status, 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Order ' . $order->id . ': order already ' . $current_status, 1, 'info', 'Pagarme', $order->id);
             return false;
         }
 
         $order->current_state = $prestashop_new_order_status;
 
         if(!$order->save()) {
-            Pagarmeps::addLog('Order ' . $order->id . ': failed to update order', 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Order ' . $order->id . ': failed to update order', 1, 'info', 'Pagarme', $order->id);
             return false;
         }
 
@@ -35,7 +35,7 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
 
         $formated_amount = $transaction['paid_amount']/100;
         if( $current_status === "paid" && !$order->addOrderPayment($formated_amount, null, $transaction['id']) ) {
-          Pagarmeps::addLog('Order ' . $order->id . ': failed to add order payment', 1, 'info', 'Pagarme', null);
+          Pagarmeps::addLog('Order ' . $order->id . ': failed to add order payment', 1, 'info', 'Pagarme', $order->id);
           return false;
         }
 

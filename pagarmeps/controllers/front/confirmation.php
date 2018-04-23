@@ -70,9 +70,9 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             try {
                 $transaction->charge();
 
-                Pagarmeps::addLog('Transaction successfully created. ID:'. $transaction->id . '| status: ' .$transaction->status, 1, 'info', 'Pagarme', null);
+                Pagarmeps::addLog('Transaction successfully created. ID:'. $transaction->id . '| status: ' .$transaction->status, 1, 'info', 'Pagarme', $order_id);
             } catch (PagarMe_Exception $e) {
-                Pagarmeps::addLog('Failed to create transaction. Reason: '. $e->getMessage(), 1, 'info', 'Pagarme', null);
+                Pagarmeps::addLog('Failed to create transaction. Reason: '. $e->getMessage(), 1, 'info', 'Pagarme', $order_id);
 
                 $this->errors[] = $e->getMessage();
             }
@@ -89,9 +89,9 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             try {
                 $transaction->capture($capture_data);
 
-                Pagarmeps::addLog('Transaction successfully captured. ID: '. $transaction->id . ' | status: ' . $transaction->status, 1, 'info', 'Pagarme', null);
+                Pagarmeps::addLog('Transaction successfully captured. ID: '. $transaction->id . ' | status: ' . $transaction->status, 1, 'info', 'Pagarme', $order_id);
             } catch (PagarMe_Exception $e) {
-                Pagarmeps::addLog('Failed to capture transaction. Reason: ' . $e->getMessage(), 1, 'info', 'Pagarme', null);
+                Pagarmeps::addLog('Failed to capture transaction. Reason: ' . $e->getMessage(), 1, 'info', 'Pagarme', $order_id);
 
                 $this->errors[] = $e->getMessage();
             }

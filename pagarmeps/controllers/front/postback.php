@@ -35,17 +35,17 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
             $order_id = $transaction['metadata']['order_id'];
         }
 
-        Pagarmeps::addLog('Postback: order id='.$order_id, 1, 'info', 'Pagarme', null);
+        Pagarmeps::addLog('Postback: order id='.$order_id, 1, 'info', 'Pagarme', $order_id);
 
         $order = new Order($order_id);
 
         if(is_null($order_id) || is_null($order)) {
-            Pagarmeps::addLog('Postback: Order not found', 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Postback: Order not found', 1, 'info', 'Pagarme', $order->id);
             return header('HTTP/1.1 400 Order not found');
         }
 
         if(!$this->updateOrderStatus($order, $transaction)) {
-            Pagarmeps::addLog('Order ' . $order->id . ': postback failed', 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Order ' . $order->id . ': postback failed', 1, 'info', 'Pagarme', $order->id);
             return header('HTTP/1.1 200 Order update failed');
         }
 
@@ -53,7 +53,7 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
             $order->setInvoice();
         }
 
-        Pagarmeps::addLog('Postback: Order ' . $order->id . ' successfully updated to' . $current_status);
+        Pagarmeps::addLog('Postback: Order ' . $order->id . ' successfully updated to' . $current_status, 1, 'info', 'Pagarme', $order->id);
 
         return header('HTTP/1.1 200 Order successfully updated');
     }
