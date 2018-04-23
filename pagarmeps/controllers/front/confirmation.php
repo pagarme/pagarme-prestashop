@@ -113,13 +113,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
 
         $this->updateOrderPayments($order, $transaction);
 
-        //Generate Invoice if paid
-        if( !$order->hasInvoice() && $transaction->status == 'paid' ){
-            $order->setInvoice(true);
-
-            Pagarmeps::addLog('Generated invoice for order ' . $order->id, 1, 'info', 'Pagarme', $order_id);
-        }
-
         $order->payment = $payment_method_name;
 
         if( !$order->save() ) {

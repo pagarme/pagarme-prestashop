@@ -16,38 +16,44 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
 
     public function updateOrderStatus($order, $transaction) {
         $current_status = $transaction['status'];
-        $prestashop_new_order_status = Pagarmeps::getStatusId($current_status);
+        $new_order_status = Pagarmeps::getStatusId($current_status);
 
-        Pagarmeps::addLog('Postback: order ' . $order->id . ' current state: ' . $order->current_state . ' new status: ' . $prestashop_new_order_status, 1, 'info', 'Pagarme', null);
-        if($order->current_state == $prestashop_new_order_status) {
-            Pagarmeps::addLog('Order ' . $order->id . ': order already ' . $current_status, 1, 'info', 'Pagarme', $order->id);
+        if($order->current_state == $new_order_status) {
+            Pagarmeps::addLog('Order already ' . $current_status, 1, 'info', 'Pagarme', $order->id);
             return false;
         }
 
-        $order->current_state = $prestashop_new_order_status;
+        $order->current_state = $new_order_status;
 
-        if(!$order->save()) {
-            Pagarmeps::addLog('Order ' . $order->id . ': failed to update order', 1, 'info', 'Pagarme', $order->id);
-            return false;
-        }
-
-        $this->addOrderHistory($order, $prestashop_new_order_status);
+        $this->addOrderHistory($order, $new_order_status);
 
         $formated_amount = $transaction['paid_amount']/100;
         if( $current_status === "paid" && !$order->addOrderPayment($formated_amount, null, $transaction['id']) ) {
-          Pagarmeps::addLog('Order ' . $order->id . ': failed to add order payment', 1, 'info', 'Pagarme', $order->id);
+          Pagarmeps::addLog('Failed to add order payment', 1, 'info', 'Pagarme', $order->id);
           return false;
+        }
+
+        //Generate Invoice if paid
+        if( !$order->hasInvoice() && $current_status == 'paid' ){
+            $order->setInvoice(true);
+
+            Pagarmeps::addLog('Successfully Generated invoice', 1, 'info', 'Pagarme', $order->id);
+        }
+
+        if(!$order->save()) {
+            Pagarmeps::addLog('Failed to save order', 1, 'info', 'Pagarme', $order->id);
+            return false;
         }
 
         return true;
     }
 
-    public function addOrderHistory($order, $prestashop_new_order_status) {
+    public function addOrderHistory($order, $new_order_status) {
         $history = new OrderHistory();
         $history->id_order = (int)$order->id;
-        $history->id_order_state = $prestashop_new_order_status;
+        $history->id_order_state = $new_order_status;
 
         $history->addWithemail();
-        $history->changeIdOrderState($prestashop_new_order_status, (int)$order->id);
+        $history->changeIdOrderState($new_order_status, (int)$order->id);
     }
 }
