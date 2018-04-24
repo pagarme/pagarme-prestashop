@@ -1151,6 +1151,19 @@ class Pagarmeps extends PaymentModule
             return $customer->cpf_cnpj;
         }
 
+        if (file_exists(_PS_MODULE_DIR_.'webmaniabrnfe/webmaniabrnfe.php')) {
+            include_once(_PS_MODULE_DIR_.'webmaniabrnfe/webmaniabrnfe.php');
+
+            $webMania = new WebmaniaBrNFe();
+
+            $documentInfos = $webMania->getCustomerNfeInfo($id_customer);
+
+            if(isset($documentInfos['nfe_document_number'])) {
+                return $documentInfos['nfe_document_number'];
+            }
+        }
+
+
         if (file_exists(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php')) {
             include_once(_PS_MODULE_DIR_.'djtalbrazilianregister/djtalbrazilianregister.php');
 
