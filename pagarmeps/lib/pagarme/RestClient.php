@@ -1,6 +1,6 @@
 <?php
 
-class RestClient 
+class RestClient
 {
 	private $http_client;
 	private $method;
@@ -9,7 +9,7 @@ class RestClient
 	private $parameters =  Array();
 	private $curl;
 
-	public function __construct($params = array()) 
+	public function __construct($params = array())
 	{
 		$this->curl = curl_init();
 		$this->headers = array(
@@ -26,6 +26,7 @@ class RestClient
 
 		curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($this->curl, CURLOPT_TIMEOUT, 60);
+		curl_setopt($this->curl, CURLOPT_SSLVERSION, 6);
 
 		if ($params["parameters"]) {
 			$this->parameters = array_merge($this->parameters, $params["parameters"]);
@@ -64,12 +65,12 @@ class RestClient
 			}
 		}
 
-		curl_setopt($this->curl, CURLOPT_URL, $this->url);	
+		curl_setopt($this->curl, CURLOPT_URL, $this->url);
 		curl_setopt($this->curl, CURLOPT_HTTPHEADER, $this->headers);
 		curl_setopt($this->curl, CURLOPT_CAINFO, dirname(__FILE__) . '/ca-certificates.crt');
 	}
 
-	public function run() 
+	public function run()
 	{
 		$response = curl_exec($this->curl);
 		$error = curl_error($this->curl);
@@ -86,4 +87,3 @@ class RestClient
 	}
 
 }
-
