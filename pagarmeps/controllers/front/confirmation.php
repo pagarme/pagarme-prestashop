@@ -339,6 +339,9 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
     private function calculateInstallmentsForOrder($amount){
 
         $interest_rate = Configuration::get('PAGARME_INSTALLMENT_TAX');
+        if( !$interest_rate ) {
+          $interest_rate = 0;
+        }
 
         $max_installments = Configuration::get('PAGARME_INSTALLMENT_MAX_NUMBER');
 
