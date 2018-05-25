@@ -6,7 +6,7 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
     public function postProcess()
     {
         if ($this->module->active == false) {
-            Pagarmeps::addLog('Pagar.me module is not active', 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Pagar.me module is not active');
             return header('HTTP/1.1 500 Pagarme is not active');
         }
 
@@ -16,7 +16,7 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
         $request_body = file_get_contents('php://input');
 
         if(!Pagarme::validateRequestSignature($request_body, $_SERVER['HTTP_X_HUB_SIGNATURE'])) {
-            Pagarmeps::addLog('Postback: dados de postback inválidos', 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Postback: dados de postback inválidos');
             return header('HTTP/1.1 403 Dados de postback inválidos');
         }
 
@@ -36,16 +36,16 @@ class PagarmepsPostbackModuleFrontController extends PagarmepsOrderModuleFrontCo
         $order = new Order($order_id);
 
         if(is_null($order_id) || is_null($order)) {
-            Pagarmeps::addLog('Postback: Order not found', 1, 'info', 'Pagarme', $order_id);
+            Pagarmeps::addLog('Postback: Order not found');
             return header('HTTP/1.1 400 Order not found');
         }
 
         if(!$this->updateOrderStatus($order, $transaction)) {
-            Pagarmeps::addLog('Postback: Cannot update order status', 1, 'info', 'Pagarme', $order->id);
+            Pagarmeps::addLog('Postback: Cannot update order status');
             return header('HTTP/1.1 200 Order update failed');
         }
 
-        Pagarmeps::addLog('Postback: Order ' . $order->id . ' successfully updated to ' . $current_status, 1, 'info', 'Pagarme', $order->id);
+        Pagarmeps::addLog('Postback: Order ' . $order->id . ' successfully updated to ' . $current_status);
 
         return header('HTTP/1.1 200 Order successfully updated');
     }

@@ -19,7 +19,7 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
         $new_order_status = Pagarmeps::getStatusId($current_status);
 
         if($order->current_state == $new_order_status) {
-            Pagarmeps::addLog('Order already ' . $current_status, 1, 'info', 'Pagarme', $order->id);
+            Pagarmeps::addLog('Order already ' . $current_status);
             return false;
         }
 
@@ -29,7 +29,7 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
 
         $formated_amount = $transaction['paid_amount']/100;
         if( $current_status === "paid" && !$order->addOrderPayment($formated_amount, null, $transaction['id']) ) {
-          Pagarmeps::addLog('Failed to add order payment', 1, 'info', 'Pagarme', $order->id);
+          Pagarmeps::addLog('Failed to add order payment');
           return false;
         }
 
@@ -37,11 +37,11 @@ class PagarmepsOrderModuleFrontController extends ModuleFrontController
         if( !$order->hasInvoice() && $current_status == 'paid' ){
             $order->setInvoice(true);
 
-            Pagarmeps::addLog('Successfully Generated invoice', 1, 'info', 'Pagarme', $order->id);
+            Pagarmeps::addLog('Successfully Generated invoice');
         }
 
         if(!$order->save()) {
-            Pagarmeps::addLog('Failed to save order', 1, 'info', 'Pagarme', $order->id);
+            Pagarmeps::addLog('Failed to save order');
             return false;
         }
 
