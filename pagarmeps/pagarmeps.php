@@ -1128,10 +1128,14 @@ class Pagarmeps extends PaymentModule
         return count($options);
     }
 
-    public static function addLog($message, $severity = 1, $error_code = null, $object_type = null, $object_id = null, $allow_duplicate = false, $id_employee = null)
+    public static function addLog($message)
     {
+        $severity = 1;
+        $error_code = 'info';
+        $object_type = 'Pagarme';
+
         if ((bool)Configuration::get('PAGARME_ACTIVATE_LOG') == true) {
-            PrestaShopLogger::addLog($message.' TS='.microtime(), $severity, $error_code, $object_type, $object_id, $allow_duplicate, $id_employee);
+            PrestaShopLogger::addLog($message, $severity, $error_code, $object_type);
         }
     }
 

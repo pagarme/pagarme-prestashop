@@ -36,7 +36,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         $currency_id = (int)Context::getContext()->currency->id;
 
         if ($posted_data['secure_key'] !== $customer->secure_key) {
-            Pagarmeps::addLog('Invalid secure key', 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Invalid secure key');
 
             $this->errors[] = $this->module->l('An error occured. Please contact the merchant to have more informations');
             return $this->setTemplate('error.tpl');
@@ -70,9 +70,9 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             try {
                 $transaction->charge();
 
-                Pagarmeps::addLog('Transaction successfully created. ID:'. $transaction->id . '| status: ' .$transaction->status, 1, 'info', 'Pagarme', $order_id);
+                Pagarmeps::addLog('Transaction successfully created. ID:' . $transaction->id . '| status: ' . $transaction->status);
             } catch (PagarMe_Exception $e) {
-                Pagarmeps::addLog('Failed to create transaction. Reason: '. $e->getMessage(), 1, 'info', 'Pagarme', $order_id);
+                Pagarmeps::addLog('Failed to create transaction. Reason: ' . $e->getMessage());
 
                 $this->errors[] = $e->getMessage();
             }
@@ -89,9 +89,9 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             try {
                 $transaction->capture($capture_data);
 
-                Pagarmeps::addLog('Transaction successfully captured. ID: '. $transaction->id . ' | status: ' . $transaction->status, 1, 'info', 'Pagarme', $order_id);
+                Pagarmeps::addLog('Transaction successfully captured. ID: '. $transaction->id . ' | status: ' . $transaction->status);
             } catch (PagarMe_Exception $e) {
-                Pagarmeps::addLog('Failed to capture transaction. Reason: ' . $e->getMessage(), 1, 'info', 'Pagarme', $order_id);
+                Pagarmeps::addLog('Failed to capture transaction. Reason: ' . $e->getMessage());
 
                 $this->errors[] = $e->getMessage();
             }
@@ -116,7 +116,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         $order->payment = $payment_method_name;
 
         if( !$order->save() ) {
-            Pagarmeps::addLog('Cannot save order', 1, 'info', 'Pagarme', $order_id);
+            Pagarmeps::addLog('Cannot save order');
         }
 
         $pgmTrans = new PagarmepsTransactionClass();
@@ -126,7 +126,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         $pgmTrans->current_status = $transaction->current_status;
 
         if( !$pgmTrans->save() ) {
-            Pagarmeps::addLog('Cannot save the transaction on database ', 1, 'info', 'Pagarme', $order_id);
+            Pagarmeps::addLog('Cannot save the transaction on database');
         }
 
         if($posted_data['choosen_card']) {
@@ -145,7 +145,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             $data['payment_way'] == 'boleto'
         ) {
             $this->createDiscountAmount();
-            Pagarmeps::addLog('Desconto de boleto', 1, 'info', 'Pagarme', null);
+            Pagarmeps::addLog('Desconto de boleto');
 
             return $this->context->cart->getOrderTotal() * 100;
         }
@@ -227,7 +227,7 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
         $pgmCard->id_client = (int)$cart->id_customer;
 
         if( !$pgmCard->save() ) {
-            Pagarmeps::addLog('Card saved '. $choosen_card, 1, 'info', 'Pagarme', $order_id);
+            Pagarmeps::addLog('Card saved ' . $choosen_card);
         }
 
     }
