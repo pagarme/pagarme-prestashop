@@ -386,6 +386,36 @@ class Pagarmeps extends PaymentModule
         Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
         Configuration::updateValue('PAGARME_DEFAULT_REFUSED', $order_state->id);
 
+
+        //PENDING_REVIEW
+        $order_state = new OrderState();
+        $order_state->invoice = false;
+        $order_state->send_email = false;
+        $order_state->module_name = $this->name;
+        $order_state->color = '#FFF86B';
+        $order_state->unremovable = false;
+        $order_state->hidden = false;
+        $order_state->logable = false;
+        $order_state->delivery = false;
+        $order_state->shipped = false;
+        $order_state->paid = false;
+        $order_state->deleted = false;
+        $order_state->name = array();
+        $order_state->template = array();
+
+        foreach (Language::getLanguages(false) as $language) {
+            $order_state->name[(int)$language['id_lang']] = 'Revisão Pendente';
+        }
+
+        if (!$order_state->add()) {
+            return false;
+        }
+
+        $file = _PS_ROOT_DIR_.'/img/os/'.(int)$order_state->id.'.gif';
+        Tools::copy((dirname(__file__).'/views/img/pagarme_x16.gif'), $file);
+        Configuration::updateValue('PAGARME_DEFAULT_PENDING_REVIEW', $order_state->id);
+
+
         return true;
     }
 
