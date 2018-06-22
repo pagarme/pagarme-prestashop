@@ -31,3 +31,4 @@ download/
 /img/*
 upload/
 .idea/
+watch.sh
