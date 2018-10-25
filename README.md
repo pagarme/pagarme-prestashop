@@ -19,3 +19,25 @@
 * ```Boleto - Prazo```, aqui você pode configurar o prazo para pagamento do boleto.
 * ```Descrição da fatura```, aqui você pode configurar uma descrição na fatura.
 * ```Activate logs```, aqui você pode habilitar ou desabilitar os log
+
+## Para desenvolvedores
+
+### Requisitos
+
+- [Docker](https://docs.docker.com)
+- [Docker Compose](https://docs.docker.com/compose/)
+
+### Instalando o Prestashop 1.6.20
+
+1. Execute o comando `docker-compose up -d` para iniciar os containers e a instalação do Prestashop
+2. Execute o comando `docker-compose logs -f prestashop` para acompanhar os logs da instalação
+
+Pronto. A plataforma e o módulo do Pagar.me já devem estar instalados e basta seguir com a configuração normalmente como descrito acima.
+
+**Acessando a loja:**
+
+Para acessar a loja basta entrar no link `http://localhost` no seu navegador
+
+**Acessando o painel administrativo:**
+
+Para acessar o painel basta entrar no link `http://localhost/admin123` no seu navegador e utilizar `demo@prestashop.com` para e-mail e `prestashop_demo` para a senha
