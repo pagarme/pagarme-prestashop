@@ -1,0 +1,16 @@
+version: "2"
+services:
+  prestashop:
+    image: prestashop/prestashop:1.6
+    env_file: .env
+    ports:
+      - 80:80
+    volumes:
+      - ./pagarmeps:/var/www/html/modules/pagarmeps
+    working_dir: /var/www/html
+
+  mysql:
+    image: mysql:5.5
+    env_file: .env
+    ports:
+      - 3306:3306
