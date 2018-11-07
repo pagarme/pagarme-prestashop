@@ -32,6 +32,9 @@
 	<p>
 		{l s='The valor total of your order is:' mod='pagarmeps' }
 		<span class="amount {$currency->id|escape:'htmlall':'UTF-8'}">{convertPrice price=$total_order}</span>
+		{if isset($boleto_discount_percentage) && $boleto_discount_percentage > 0}
+			{l s='(%s%% Boleto discount)' sprintf=$boleto_discount_percentage mod='pagarmeps' }
+		{/if}
 	</p>
 	
 	<form id="pagarme_payment_form" action="{$link->getModuleLink('pagarmeps', 'confirmation', ['cart_id' => $cart_id, 'secure_key' => $secure_key], true)|escape:'htmlall':'UTF-8'}" method="POST">

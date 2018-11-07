@@ -144,7 +144,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             (isset($transaction) && $transaction->getPaymentMethod() == 'boleto') ||
             $data['payment_way'] == 'boleto'
         ) {
-            $this->createDiscountAmount();
             Pagarmeps::addLog('Desconto de boleto');
 
             return $this->context->cart->getOrderTotal() * 100;
@@ -265,75 +264,6 @@ class PagarmepsConfirmationModuleFrontController extends PagarmepsOrderModuleFro
             'ddd'    => $ddd,
             'number' => $phone
         );
-    }
-
-    private function createDiscountAmount()
-    {
-        if (!Configuration::get('PAGARME_DISCOUNT_BOLETO')) {
-            return $this;
-        }
-
-        foreach ($this->context->cart->getCartRules() as $cart_rule) {
-            if ($cart_rule['description'] == 'discount_boleto') {
-                return $this;
-            }
-        }
-
-        $languages = Language::getLanguages();
-        foreach($languages as $key => $language) {
-            $cart_rule_names[$language['id_lang']] = "Desconto Boleto";
-        }
-        $cart_rule = new CartRule();
-
-        $cart_rule->name = $cart_rule_names;
-        $cart_rule->id_customer = $this->context->cart->id_customer;
-        $cart_rule->date_from = date('Y-m-d H:i:s');
-        $cart_rule->date_to = date('Y-m-d H:i:s', strtotime("+2 days",strtotime(date('Y-m-d'))));
-        $cart_rule->description = 'discount_boleto';
-        $cart_rule->quantity = 1;
-        $cart_rule->quantity_per_user = 1;
-        $cart_rule->priority = 1;
-        $cart_rule->partial_use = 1;
-        $cart_rule->code = md5('discount_boleto' .$this->context->cart->id_customer . date('Y-m-d H:i:s'));
-        $cart_rule->minimum_amount = 0;
-        $cart_rule->minimum_amount_tax = 0;
-        $cart_rule->minimum_amount_currency = 1;
-        $cart_rule->minimum_amount_shipping = 0;
-        $cart_rule->country_restriction = 0;
-        $cart_rule->carrier_restriction = 0;
-        $cart_rule->group_restriction = 0;
-        $cart_rule->cart_rule_restriction = 0;
-        $cart_rule->product_restriction = 0;
-        $cart_rule->shop_restriction = 0;
-        $cart_rule->free_shipping = 0;
-        #$cart_rule->reduction_percent = Configuration::get('PAGARME_DISCOUNT_BOLETO');
-        $cart_rule->reduction_amount = $this->calculateBoletoDiscountAmount();
-        $cart_rule->reduction_tax = 1;
-        $cart_rule->reduction_currency = 1;
-        $cart_rule->reduction_product = 0;
-        $cart_rule->gift_product = 0;
-        $cart_rule->gift_product_attribute = 0;
-        $cart_rule->highlight = 0;
-        $cart_rule->active = 1;
-
-        $cart_rule->add();
-        $this->context->cart->addCartRule($cart_rule->id);
-        $this->context->cart->save();
-    }
-
-    protected function calculateBoletoDiscountAmount()
-    {
-        $taxCalculationMethod = Group::getPriceDisplayMethod((int)Group::getCurrent()->id);
-        $useTax = !($taxCalculationMethod == PS_TAX_EXC);
-
-        $cart = $this->context->cart;
-        $shippingAmount = $cart->getOrderTotal($useTax, Cart::ONLY_SHIPPING, null, $cart->id_carrier, false);
-
-        $totalAmount = $cart->getOrderTotal();
-        $totalAmountFreeShipping = $totalAmount - $shippingAmount;
-
-        $discountAmount = (Configuration::get('PAGARME_DISCOUNT_BOLETO') / 100) * $totalAmountFreeShipping;
-        return number_format($discountAmount, '2', '.', '');
     }
 
     private function calculateInstallmentsForOrder($amount){
