@@ -843,8 +843,7 @@ class Pagarmeps extends PaymentModule
      */
     public function hookPayment($params)
     {
-        //		if ((bool)Configuration::get('PAGARME_LIVE_MODE') == false)
-        //			return;
+        $cart = Pagarmeps::removePagarmeCartRules( Context::getContext()->cart );
 
         $currency_id = $params['cart']->id_currency;
         $currency = new Currency((int)$currency_id);
@@ -867,8 +866,6 @@ class Pagarmeps extends PaymentModule
 
         $return = '';
         if ($integrationMode == 'checkout_transparente') {
-            $cart = Context::getContext()->cart;
-
             $confirm_customer_data = Configuration::get('PAGARME_CONFIRM_CUSTOMER_DATA_IN_CHECKOUT_PAGARME') == 1 ? "true" : "false";
 
             $total_order = $cart->getOrderTotal();
@@ -958,6 +955,17 @@ class Pagarmeps extends PaymentModule
 //		}
 
         return $return;
+    }
+
+    public static function removePagarmeCartRules($cart, $filter=CartRule::FILTER_ACTION_REDUCTION) {
+        foreach ( $cart->getCartRules($filter) as $cart_rule ) {
+            if ( strpos($cart_rule['code'], 'pagarmeps_') !== false ) {
+                $cart->removeCartRule( $cart_rule['id_cart_rule'] );
+            }
+        }
+
+        $cart->save();
+        return $cart;
     }
 
     protected function calculateBoletoDiscount()

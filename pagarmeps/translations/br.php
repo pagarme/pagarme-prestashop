@@ -79,6 +79,7 @@ $_MODULE['<{pagarmeps}prestashop>redirect-boleto_ea30917d57547e20300d578a0e4bcee
 $_MODULE['<{pagarmeps}prestashop>redirect-boleto_ae499e7a25edcb797ca31a913db2396b'] = 'Você pode pagar ele em uma agência bancária ou no site do seu banco';
 $_MODULE['<{pagarmeps}prestashop>redirect-boleto_03a748e22f0f47de265389edce65f57f'] = 'Outros meios de pagamento';
 $_MODULE['<{pagarmeps}prestashop>redirect-boleto_70d9be9b139893aa6c69b5e77e614311'] = 'Confirmar';
+$_MODULE['<{pagarmeps}prestashop>redirect-boleto_76012d4cb3e81beabfbef5190f4a0516'] = '(%s%% de desconto no Boleto)';
 $_MODULE['<{pagarmeps}prestashop>redirect-card_170d70efba5ef62bfb6ad6c49101096b'] = 'Pagamento por cartão de credito';
 $_MODULE['<{pagarmeps}prestashop>redirect-card_d12eaa4496285307f2e26d94b70cd52b'] = 'O valor total do seu pedido é:';
 $_MODULE['<{pagarmeps}prestashop>redirect-card_ff689b49f569c8e56083947d36626b81'] = 'Número do cartão:';
