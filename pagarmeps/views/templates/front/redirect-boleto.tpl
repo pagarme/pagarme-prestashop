@@ -60,7 +60,7 @@
 			{l s='Other payment form' mod='pagarmeps' }
 		</a>
 		{if $integration_mode == 'gateway'}
-			<a onclick="javascript:document.forms.namedItem('pagarme_payment_form').submit();" class="button btn btn-default standard-checkout button-medium">
+			<a onclick="$(this).attr('disabled','disabled');javascript:document.forms.namedItem('pagarme_payment_form').submit();" id="pagarme_submit_button" class="button btn btn-default standard-checkout button-medium">
 				<span>{l s='Confirm' mod='pagarmeps'}<i class="icon-chevron-right right"></i></span>
 			</a>
 		{/if}

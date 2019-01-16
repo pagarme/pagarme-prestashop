@@ -48,7 +48,29 @@ $(document).ready(function(){
     });
 });
 
+function blockModal(block) {
+    if(block == 1) {
+        jQuery.blockUI({
+            message: '<h1>Carregando '+'<img class="blockUImg" src="/modules/pagarmeps/views/img/loading.gif" />'+'</h1>',
+            css: {
+                border: 'none',
+                padding: '15px',
+                backgroundColor: '#fff',
+                'border-radius': '10px',
+                '-webkit-border-radius': '10px',
+                '-moz-border-radius': '10px',
+                color: '#4f7743'
+            },
+            overlayCSS: { backgroundColor: 'gray' }
+        });
+    } else {
+        setTimeout(jQuery.unblockUI, 1000);
+    }
+}
+
 function validateForm() {
+	$("#pagarme_submit_button").attr('disabled','disabled');
+    blockModal(1);
 	var form = $('#pagarme_payment_form');
 	var payment_way = $('#pagarme_payment_form input[name=payment_way]').val();
 
@@ -92,7 +114,8 @@ function validateForm() {
 			}
 			$('#pagarme_payment_form #field_errors').html(errorText);
 			$('#pagarme_payment_form #field_errors').show();
-			
+			$("#pagarme_submit_button").removeAttr('disabled');
+            blockModal(0);
 		} else {
 			// se não há erros, gera o card_hash...
 			creditCard.generateHash(function(cardHash) {
